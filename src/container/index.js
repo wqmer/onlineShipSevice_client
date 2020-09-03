@@ -1,11 +1,23 @@
 import React, { Component } from 'react';
 import 'ant-design-pro/dist/ant-design-pro.css'
-import { message, BackTop, notification, Tabs, PageHeader, Input, Dropdown, Button, Avatar, Layout, Menu, Breadcrumb, Icon, Badge } from 'antd';
+import {
+    message,
+    BackTop,
+    notification,
+    Tabs,
+    PageHeader,
+    Input,
+    Dropdown,
+    Button,
+    Avatar,
+    Layout,
+    Menu,
+    Breadcrumb,
+    Badge,
+} from 'antd';
 import { Router, Route, Switch, Link, NavLink } from 'react-router-dom';
 import createHistory from 'history/createBrowserHistory';
 import ComopnentLogin from './shipping_user/login_page';
-import ComponentHome from './shopping/homePage';
-import ComponentUser from './seller/homePage';
 import Component_ship_user from './shipping_user/homePage';
 import NotFound from '../components/notFound'
 import PrivateRoute from '../router/PrivateRoute';
@@ -23,17 +35,17 @@ class AppIndex extends Component {
     }
 
     state = {}
-    
+
     static getDerivedStateFromProps = (props, state) => {
         if (props.message && props.status_code === 0) {
-          message.success(props.message)
+            message.success(props.message)
         }
         if (props.message && props.status_code === 1) {
-          let config = {
-            message: '远程服务器报错',
-            description: props.message,
-          }
-          notification.error(config)
+            let config = {
+                message: '远程服务器报错',
+                description: props.message,
+            }
+            notification.error(config)
         }
         return null
     }

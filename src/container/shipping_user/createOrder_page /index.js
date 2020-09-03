@@ -1,4 +1,17 @@
-import { message, Drawer, Checkbox, Alert, Button, Typography, Select, Collapse, Steps, Divider, Icon } from 'antd';
+import Icon, { MoneyCollectTwoTone, UpOutlined } from '@ant-design/icons';
+import {
+    Space,
+    message,
+    Drawer,
+    Checkbox,
+    Alert,
+    Button,
+    Typography,
+    Select,
+    Collapse,
+    Steps,
+    Divider,
+} from 'antd';
 import React, { Component } from 'react';
 import { Redirect, Router, Route, Switch, Link, NavLink } from 'react-router-dom';
 // import Address_form from './address_form'
@@ -14,6 +27,7 @@ import {
     post
 } from '../../../util/fetch';
 import { actions as single_order_form } from '../../../reducers/shipping_platform/single_order_form'
+import { actions as user_account_actions } from '../../../reducers/shipping_platform/user'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
@@ -45,7 +59,7 @@ class Create_order_page extends React.Component {
     };
 
     state = {
-        step_status : undefined,
+        step_status: undefined,
         current: 0,
         childrenDrawer: false,
         is_loading: false,
@@ -86,11 +100,11 @@ class Create_order_page extends React.Component {
     };
 
     postBill = (rate) => {
-        let obj ={
-            'billing_information' : {}
+        let obj = {
+            'billing_information': {}
         }
-        obj.billing_information.on_display = true 
-        obj.billing_information.total = rate 
+        obj.billing_information.on_display = true
+        obj.billing_information.total = rate
         this.props.set_form_info(obj)
 
         // this.setState({
@@ -231,13 +245,13 @@ class Create_order_page extends React.Component {
 
     next = () => {
         const current = this.state.current + 1;
-        this.setState({ current , step_status :'process'});
+        this.setState({ current, step_status: 'process' });
         window.scrollTo(0, 0)
     }
 
     pervious = () => {
         const current = this.state.current - 1;
-        this.setState({ current , step_status :'process'});
+        this.setState({ current, step_status: 'process' });
         window.scrollTo(0, 0)
     }
 
@@ -254,19 +268,19 @@ class Create_order_page extends React.Component {
                 post('/user/mock_submit_order', { "order_id": "I201912291212Tj04npAIFcj" })
                     .then(res => {
                         if (res.code == 0) {
-                            message.success({ content: '获取运单成功！', key: 'pay', duration: 5})
+                            message.success({ content: '获取运单成功！', key: 'pay', duration: 5 })
                             const current = this.state.current + 1;
-                            this.setState({ current , is_loading: false , step_status :'finish'});
+                            this.setState({ current, is_loading: false, step_status: 'finish' });
                         } else {
                             message.error({ content: "创建订单失败, " + `${res.message}`, key: 'pay', duration: 10 })
-                            this.setState({ is_loading: false ,step_status :'error'})
-                        }    
+                            this.setState({ is_loading: false, step_status: 'error' })
+                        }
                     })
                     // .catch(error => { notification.error(format.notfication_remote_server_error(handle_error(error).message)) })
                     .catch(error => {
                         message.error({ content: `创建订单失败,${error}`, key: 'pay', duration: 10 });
                         console.log(error)
-                        this.setState({ is_loading: false ,step_status :'error'})
+                        this.setState({ is_loading: false, step_status: 'error' })
                     })
                 // .finally(this.setState({ is_loading: false }))
             });
@@ -289,24 +303,13 @@ class Create_order_page extends React.Component {
         //         console.log(error)
         //         this.setState({ is_loading: false })
         //     })
-   
+
 
     }
 
-    reset = () =>   this.setState({ current: 0 ,step_status :'process' })
-    
-    
-    display_term = () => {
-        return (
-            <div>
-                <Text style={{ fontSize: '16px', fontWeight: 700, }} >服务条款</Text>
-                <Divider style={{ marginTop: 6, marginBottom: 6 }}></Divider>
-                <Checkbox style={{ marginBottom: '64px', display: 'block' }}>请确认以地址信息，都真实有效。如不符实，本平台对任何造成服务的影响没有法律责任</Checkbox>
-            </div>
-        )
-    }
+    reset = () => this.setState({ current: 0, step_status: 'process' })
 
-    display_action = (current) => {
+    show_action = (current) => {
 
         let Button_props = [
             {
@@ -330,64 +333,83 @@ class Create_order_page extends React.Component {
         ]
 
         return (
-            <div>
-                <Button
-                    loading={this.state.is_loading}
-                    onClick={() => Button_props[current].aciton_one()}
-                    type="primary"
-                    style={{ width: 120, marginBottom: '10px' }}
-                >
-                    {Button_props[current]['label_one']}
-                </Button>
 
-                <Button
-                    disabled={this.state.is_loading}
-                    onClick={() => Button_props[current].aciton_two()}
-                    style={{ width: 120, marginBottom: '10px', marginLeft: '10px' }}
-                >
-                    {Button_props[current]['label_two']}
-                </Button>
+            <div>
+                <Text style={{ fontSize: '16px', fontWeight: 700, }} >服务条款</Text>
+                <Divider style={{ marginTop: 6, marginBottom: 6 }}></Divider>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div><Checkbox >请确认以地址信息，都真实有效。如不符实，本平台对任何造成服务的影响没有法律责任</Checkbox></div>
+                    <div>
+                        <Space>
+                            <Button
+                                loading={this.state.is_loading}
+                                onClick={() => Button_props[current].aciton_one()}
+                                type="primary"
+                                style={{ width: 120, }}
+                            >
+                                {Button_props[current]['label_one']}
+                            </Button>
+
+                            <Button
+                                disabled={this.state.is_loading}
+                                onClick={() => Button_props[current].aciton_two()}
+                                style={{ width: 120, marginRight: 2, }}
+                            >
+                                {Button_props[current]['label_two']}
+                            </Button>
+                        </Space>
+                    </div>
+                </div>
             </div>
         )
     }
 
-    // shouldComponentUpdate(nextProps, nextState) {
-    //     if(this.props.collapsed != nextProps.collapsed) return false
-    //     return true
-    // }
+    shouldComponentUpdate(nextProps, nextState) {
+        // console.log('nextprops is ' + nextProps.header_hidden)
+        // console.log('this props is ' + this.props.header_hidden)
+        if (this.props.header_hidden != nextProps.header_hidden) return false
+        if (this.props.collapsed != nextProps.collapsed) return false
+        return true
+    }
 
     componentDidMount() {
+        // this.props.user_auth()
         window.scrollTo(0, 0)
     }
 
-
     render() {
-        const { current } = this.state;       
+        const { current } = this.state;
         return (
             <div>
-                <Steps current={current} status = {this.state.step_status} style={{ background: '#fff', padding: 32, paddingLeft: "8%", paddingRight: "8%", width: '100%' }} >
-                    <Step key="选择服务" title="填表" description="填写信息,选择服务" disabled={this.state.disabled[0]} />
-                    <Step key="选择支付方式" title="支付" description="选择付款方式并支付" disabled={this.state.disabled[2]} />
-                    <Step key="订单完成并打印运单" title="完成" description="打印运单或稍后处理" disabled={this.state.disabled[3]} />
-                </Steps>
-                <div style={{ background: '#fff', padding: 32, paddingRight: "16%", paddingLeft: "13%", }}>
+                <div style={{ background: '#fff', boxShadow: 'rgb(217, 217, 217) 1px 1px 7px 0px', padding: 32, }}>
+                    <Steps
+                        current={current}
+                        status={this.state.step_status}
+                        style={{ width: '100%' }} >
+                        <Step key="选择服务" title="填表" description="填写信息,选择服务" disabled={this.state.disabled[0]} />
+                        <Step key="选择支付方式" title="支付" description="选择付款方式并支付" disabled={this.state.disabled[2]} />
+                        <Step key="订单完成并打印运单" title="完成" description="打印运单或稍后处理" disabled={this.state.disabled[3]} />
+                    </Steps>
+                </div>
+
+                <div style={{ background: '#F8F8F8', marginTop: 16, }}>
                     {this.display_content(current_step[current])}
                 </div>
 
-                <div style={{ background: '#fff', padding: 32, paddingTop: 12, paddingRight: "16%", paddingLeft: "13%", width: '100%', }}>
-                    {current == 2 ? null : this.display_term()}
+                <div style={{ marginTop: 32, }}>
+                    {current == 2 ? null : this.show_action(current)}
                 </div>
 
-                <div style={{ background: '#fff', padding: 32, paddingTop: 0, paddingRight: "16%", paddingLeft: "13%", width: '100%' }}>
-                    {current == 2 ? null : this.display_action(current)}
-                </div>
 
                 <Drawer
                     title={
                         <div>
-                            <Icon style={{ display: 'inline-block', fontSize: '18px' }} type="money-collect" theme="twoTone" />
+                            <MoneyCollectTwoTone style={{ display: 'inline-block', fontSize: '18px' }} />
                             <div style={{ display: 'inline-block', width: 200, marginLeft: 8, fontSize: 18 }}> <a>总费用 ： $ {this.props.billing_information.total} </a></div>
-                            <Icon style={{ display: 'inline-block', marginLeft: '35%', fontSize: 18, }} type="up" rotate={this.state.is_expand ? 180 : 0} onClick={this.changeHeight} />
+                            <UpOutlined
+                                style={{ display: 'inline-block', marginLeft: '35%', fontSize: 18, }}
+                                rotate={this.state.is_expand ? 180 : 0}
+                                onClick={this.changeHeight} />
                         </div>}
                     // headerStyle ={{paddingLeft : "35%"}}
                     // bodyStyle ={{overflow:'visible'}}
@@ -420,6 +442,7 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
     return {
         set_form_info: bindActionCreators(single_order_form.get_form_info, dispatch),
+        user_auth: bindActionCreators(user_account_actions.user_auth, dispatch),
     }
 }
 

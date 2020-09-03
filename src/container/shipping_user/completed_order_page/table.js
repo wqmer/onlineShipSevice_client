@@ -4,8 +4,9 @@ import QueueAnim from 'rc-queue-anim';
 import 'antd/dist/antd.css';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
+import { ExportOutlined, PrinterOutlined, PrinterTwoTone } from '@ant-design/icons';
 import { Button, Table, Divider } from 'antd';
-import { Badge, Alert, Popconfirm, message, Checkbox, Icon } from 'antd';
+import { Badge, Alert, Popconfirm, message, Checkbox } from 'antd';
 import XLSX from 'xlsx'
 import Animate from 'rc-animate';
 import { TweenOneGroup } from 'rc-tween-one';
@@ -119,7 +120,7 @@ class MyTable extends React.Component {
         fixed: 'left',
         render: (text, record) => (
 
-          <span><Icon type="printer" theme="twoTone" /> <a>打印</a></span>
+          <span><PrinterTwoTone /> <a>打印</a></span>
 
         )
       },
@@ -166,8 +167,8 @@ class MyTable extends React.Component {
     ];
     return (
       <div style={{ background: '#fff', padding: 32 }}>
-        <Button disabled={this.state.selectedRowKeys.length == 0} onClick={() => this.handleCheck('打印')} type="primary" icon='printer' style={{ marginBottom: '10px' }} >批量打印</Button>
-        <Button disabled={this.state.selectedRowKeys.length == 0} onClick={() => this.handleCheck('导出')} type="primary" icon='export' style={{ marginBottom: '10px', marginLeft: '10px' }} >导出记录</Button>
+        <Button disabled={this.state.selectedRowKeys.length == 0} onClick={() => this.handleCheck('打印')} type="primary" icon={<PrinterOutlined />} style={{ marginBottom: '10px' }} >批量打印</Button>
+        <Button disabled={this.state.selectedRowKeys.length == 0} onClick={() => this.handleCheck('导出')} type="primary" icon={<ExportOutlined />} style={{ marginBottom: '10px', marginLeft: '10px' }} >导出记录</Button>
 
         <Alert style={{ marginBottom: '10px' }}
           message={<div>已经选择 <a style={{ marginLeft: '5px', marginRight: '5px' }} >{this.state.selectedRowKeys.length}</a>项<a onClick={this.handleCleanCheck} style={{ marginLeft: '30px' }}>取消选择</a> </div>}
@@ -195,7 +196,7 @@ class MyTable extends React.Component {
         />
 
       </div>
-    )
+    );
   }
 }
 

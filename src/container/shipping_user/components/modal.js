@@ -5,7 +5,10 @@ import CheckForm from './checkForm'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
 import {actions} from '../../../reducers/saveOrder'
-import { Button, Modal, Form, Input, Radio, Select, message } from 'antd';
+import { FileExcelOutlined, PlusOutlined } from '@ant-design/icons';
+import { Form } from '@ant-design/compatible';
+import '@ant-design/compatible/assets/index.css';
+import { Button, Modal, Input, Radio, Select, message } from 'antd';
 
 import EditableForm from './addableFrom'
 
@@ -42,10 +45,9 @@ class CollectionsPage extends React.Component {
 
   render() {
     return (
-     
       <div style = {{display:'inline'}}    >
-        <Button type="dashed" icon = 'plus' style={ { marginBottom : '10px' }  } onClick={this.showModal}>添加订单</Button>
-        <Button type="dashed" icon = 'file-excel' style={ { marginBottom : '10px' , marginLeft: '10px' } } > 批量导入</Button>
+        <Button type="dashed" icon = {<PlusOutlined />} style={ { marginBottom : '10px' }  } onClick={this.showModal}>添加订单</Button>
+        <Button type="dashed" icon = {<FileExcelOutlined />} style={ { marginBottom : '10px' , marginLeft: '10px' } } > 批量导入</Button>
         <EditableForm
           wrappedComponentRef={this.saveFormRef}
           visible={this.state.visible}

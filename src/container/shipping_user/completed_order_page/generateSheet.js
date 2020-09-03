@@ -3,7 +3,10 @@ import ReactDOM from 'react-dom';
 import 'antd/dist/antd.css';
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
-import { Tooltip, Upload, Button, Modal, Form, Input, Radio, Select, message, Icon, Checkbox } from 'antd';
+import { ExportOutlined } from '@ant-design/icons';
+import { Form } from '@ant-design/compatible';
+import '@ant-design/compatible/assets/index.css';
+import { Tooltip, Upload, Button, Modal, Input, Radio, Select, message, Checkbox } from 'antd';
 // import {actions} from '../../../reducers/saveOrder'
 import XLSX from 'xlsx'
 import { actions } from '../../../reducers/saveOrder'
@@ -47,7 +50,7 @@ onChange = (checkedValues) => {
     return (
       <div style = {{display:'inline'}}    >
         <Tooltip placement="topLeft" title = {titleContent}>
-        <Button type="primary" icon = 'export' disabled = {this.props.data.length == 0 || this.props.agentType.length == 0} onClick={this.handleGenerateOrder} style={ { marginBottom : '10px'  } } loading = {false} > 生成订单</Button>
+        <Button type="primary" icon = {<ExportOutlined />} disabled = {this.props.data.length == 0 || this.props.agentType.length == 0} onClick={this.handleGenerateOrder} style={ { marginBottom : '10px'  } } loading = {false} > 生成订单</Button>
         </Tooltip>
       </div>
     );

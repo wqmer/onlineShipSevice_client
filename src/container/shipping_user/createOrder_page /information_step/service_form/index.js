@@ -1,4 +1,19 @@
-import { Tag, Typography, Button, Col, Row, Input, Form, Select, Collapse, Steps, Divider, Icon, Checkbox } from 'antd';
+import { Form } from '@ant-design/compatible';
+import '@ant-design/compatible/assets/index.css';
+import {
+    Space,
+    Tag,
+    Typography,
+    Button,
+    Col,
+    Row,
+    Input,
+    Select,
+    Collapse,
+    Steps,
+    Divider,
+    Checkbox,
+} from 'antd';
 import React, { Component } from 'react';
 import { Redirect, Router, Route, Switch, Link, NavLink } from 'react-router-dom';
 import _ from "lodash";
@@ -100,35 +115,45 @@ const Service_form = Form.create()(
         //     // this.fetch_service()
         //     // console.log('did test from componentWillReceiveProps')
         // }
+        shouldComponentUpdate(nextProps, nextState) {
+            const current_form = this.props.service_information
+            const next_form = nextProps.service_information
+            if(_.isEqual(current_form ,next_form)) return false
+            return true
+        }
+        
         componentDidUpdate(prevProps) {
             // Typical usage (don't forget to compare props):
-            console.log(prevProps.service_information.is_required_fetch)
-            if ( this.props.is_all_set() && this.props.service_information.is_required_fetch) {
+            // console.log(prevProps.service_information.is_required_fetch)
+            if (this.props.is_all_set() && this.props.service_information.is_required_fetch) {
                 this.fetch_service()
             }
-          }
+        }
 
 
         componentDidMount = () => {
             //首次获取服务 fetch 服务
             this.fetch_service()
-            console.log('did test from componentDidMount')
+            // console.log('did test from componentDidMount')
             //fetch shipping mehtod
         }
 
         render() {
+            // console.log('service_form did render')
             return (
                 <div>
                     <Row type="flex" justify="center">
-                        {this.state.service_content.map(item =>
-                            <Col style={{ marginTop: 24, marginLeft: 16 }} key={item.service_name} >
-                                <My_service_card
-                                    select={(key) => this.handle_select(key)}
-                                    // key={item.service_name}
-                                    service={item}
-                                    check={this.props.service_information.service_name == item.service_name}
-                                />
-                            </Col>)}
+                        <Space size = {32}>
+                            {this.state.service_content.map(item =>
+                                <Col style={{ marginTop: 24, }} key={item.service_name} >
+                                    <My_service_card
+                                        select={(key) => this.handle_select(key)}
+                                        // key={item.service_name}
+                                        service={item}
+                                        check={this.props.service_information.service_name == item.service_name}
+                                    />
+                                </Col>)}
+                        </Space>
                     </Row>
                 </div>
             )

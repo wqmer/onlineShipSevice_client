@@ -1,4 +1,5 @@
-import { Menu, Icon } from 'antd';
+import { AuditOutlined, HomeOutlined, DashboardOutlined, DollarOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
+import { Menu } from 'antd';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -7,16 +8,22 @@ const { SubMenu } = Menu;
 class Menu_Top extends React.Component {
     constructor(props) {
         super(props);
-      }
+    }
     state = {
-        current: 'mail',
+        current: 'client',
     };
 
     handleClick = e => {
+        const KeyMapRouter = {
+            "warehouse": `/forwarder/${e.key}/ship`,
+            "order": `/forwarder/${e.key}/draft`,
+            "client": `/forwarder/${e.key}/activated`,
+        }
+        this.props.history.push(KeyMapRouter[e.key])
         console.log('click ', e);
-        this.setState({
-            current: e.key,
-        });
+        // this.setState({
+        //     current: e.key,
+        // });
     };
 
     render() {
@@ -24,53 +31,35 @@ class Menu_Top extends React.Component {
             <Menu
                 // style={{   display: 'inline-block', }}
                 onClick={this.handleClick}
-                style={{  display: 'inline-block', paddingLeft:64, fontSize: 16, width: '50%', lineHeight: '63px' }}
+                style={{ display: 'inline-block', paddingLeft: 64, fontSize: 16, lineHeight: '63px' }}
                 // selectable ={false}
-                // selectedKeys={[this.state.current]}
+                selectedKeys={[this.props.current_selected]}
+
                 mode="horizontal">
                 <Menu.Item key="dashboard">
-                     <Icon type="dashboard" />
+                    <DashboardOutlined />
                     工作台
                 </Menu.Item>
-                {/* <Menu.Item key="track" >
-                    <Icon type="barcode" />
-                    轨迹查询
+                <Menu.Item key="order" >
+                    <AuditOutlined />
+                    订单管理
                 </Menu.Item>
-                <Menu.Item key="rate"  onClick={() => this.props.history.push(`/user/tool/rate_estimate`)} >     
-                    <Icon type="calculator" />
-                    运费试算
-                </Menu.Item> */}
+                <Menu.Item key="warehouse"  >
+                    <HomeOutlined />
+                    仓库管理
+                </Menu.Item>
+                <Menu.Item key="client" >
+                    <TeamOutlined />
+                    客户管理
+                </Menu.Item>
                 <Menu.Item key="wallet" >
-                    <Icon type="dollar" />
-                    财务管理
+                    <DollarOutlined />
+                    财务中心
                 </Menu.Item>
                 <Menu.Item key="setting" >
-                    <Icon type="setting" />
+                    <SettingOutlined />
                     设置中心
                 </Menu.Item>
-                {/* <SubMenu
-                    title={
-                        <span className="submenu-title-wrapper">
-                            <Icon type="calculator" />
-                            运费试算
-                        </span>
-                    }
-                >
-                    <Menu.ItemGroup title="Item 1">
-                        <Menu.Item key="setting:1">Option 1</Menu.Item>
-                        <Menu.Item key="setting:2">Option 2</Menu.Item>
-                    </Menu.ItemGroup>
-                    <Menu.ItemGroup title="Item 2">
-                        <Menu.Item key="setting:3">Option 3</Menu.Item>
-                        <Menu.Item key="setting:4">Option 4</Menu.Item>
-                    </Menu.ItemGroup>
-                </SubMenu> */}
-                {/* <Menu.Item key="alipay">
-
-                    <a href="https://ant.design" target="_blank" rel="noopener noreferrer">
-                        财务管理
-                     </a>
-                </Menu.Item> */}
             </Menu>
         );
     }

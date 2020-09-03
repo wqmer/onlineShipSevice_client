@@ -1,6 +1,7 @@
 import { fork } from 'redux-saga/effects'
 import { getWorkbookFlow } from './file'
 import {
+    logOutFlow,
     loginFlow,
     getAllorderFlow,
     user_auth,
@@ -39,6 +40,7 @@ export default function* rootSaga() {
     // yield fork(set_order_number_flow);
 
     yield fork(loginFlow);
+    yield fork(logOutFlow);
     yield fork(getAllorderFlow);
     yield fork(delete_drafts_flow);
 

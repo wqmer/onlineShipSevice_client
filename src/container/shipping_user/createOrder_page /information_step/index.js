@@ -1,5 +1,17 @@
 
-import { Drawer, message, Checkbox, Alert, Button, Typography, Select, Collapse, Steps, Divider, Icon } from 'antd';
+import Icon, { CaretLeftOutlined } from '@ant-design/icons';
+import {
+    Drawer,
+    message,
+    Checkbox,
+    Alert,
+    Button,
+    Typography,
+    Select,
+    Collapse,
+    Steps,
+    Divider,
+} from 'antd';
 import React, { Component } from 'react';
 import { Redirect, Router, Route, Switch, Link, NavLink } from 'react-router-dom';
 import { connect } from 'react-redux'
@@ -99,6 +111,10 @@ class Information_page extends React.Component {
         super(props)
     }
 
+    state = {
+         setting : { ...this.props.setting}
+    }
+
     postBill = (rate) => this.props.postBill(rate)
 
     reset_info = (step) => {
@@ -137,44 +153,69 @@ class Information_page extends React.Component {
 
     is_all_set = () => this.props.sender_information.is_ready && this.props.receipant_information.is_ready && this.props.parcel_information.is_ready
 
-    is_required_recalculate = () => {}
+    is_required_recalculate = () => { }
 
     componentDidMount = () => this.props.get_form_info()
 
+    // shouldComponentUpdate(nextProps, nextState) {
+    //     const current_form = this.props.setting
+    //     const next_form = nextProps.setting
+    //     console.log('crrent is ' + JSON.stringify(current_form))
+    //     console.log('next is ' + JSON.stringify(next_form))
+    //     if(_.isEqual(current_form ,next_form)) return false
+    //     return true
+    // }
+    
 
     render() {
-        // console.log(this.props.setting.open_panel)
-        // console.log('i renedered')
+        // console.log(this.state.setting.open_panel)
+        // console.log('infomation step did renedered')
         const is_all_set = this.props.sender_information.is_ready && this.props.receipant_information.is_ready && this.props.parcel_information.is_ready
+        // const is_all_set = true
+        const getStyle = (key) => {
+            if (key == "parcel_information" || key == "service_information") {
+                return ({ padding: " 16px 32px 16px 32px" })
+            } else {
+                return ({ border: "1px dashed rgb(232,232,232)", background: '#F8F8F8', padding: " 16px 32px 16px 32px" })
+            }
+        }
 
         return (
             <Collapse
-                expandIcon={({ isActive }) => <span><Icon type="caret-left" rotate={isActive ? -90 : 0} /></span>}
+                expandIcon={({ isActive }) => <span><CaretLeftOutlined rotate={isActive ? -90 : 0} /></span>}
                 // destroyInactivePanel = {true}
-                // style={{ background: '#fff', }}
-                // style={{   background: '#f7f7f7', }}
+                style={{ padding: 0, background: '#fff', boxShadow: 'rgb(217, 217, 217) 1px 1px 7px 0px', }}
+                // style={{   background: '#fff', }}
                 // bordered={false}
 
                 // --------------------------------------------todo 默认展开key的逻辑。表格完成后的字体改变。 完成service的可选逻辑 ， 完成包裹信息的输入部分
                 expandIconPosition="right"
                 activeKey={this.props.setting.open_panel}
+                // activeKey={this.state.setting.open_panel}
                 // defaultActiveKey={this.props.setting.open_panel}
                 onChange={(e) => {
+                    // console.log(e)
                     let obj = { setting: {} }
                     obj['setting']['open_panel'] = e
-                    this.props.update_form_info(obj)
+                    // this.setState({ ...obj })
+                    this.props.update_form_info(obj)         
                 }}
+                ghost
             >
                 {form_content(this).map((item, index) =>
                     <Panel
-                        // disabled={item.key == 'service_information' && !is_all_set}
+                        forceRender = {item.key != 'service_information' }
+                        disabled={item.key == 'service_information' && !is_all_set}
                         style={{
-                            // background: '#F5F5F5',
-                            // background: '#fff',
+
+                            background: '#fff',
                             // marginBottom: 12,
                             // marginBottom: 12,
                             // border: 0,
+                            // background: '#F8F8F8',
                             overflow: 'hidden',
+                            // padding:0
+                            // border:"1px solid black",
                         }}
                         header={
                             <div>
@@ -188,6 +229,8 @@ class Information_page extends React.Component {
                                                     <Text
                                                         disabled={item.key == 'service_information' && !is_all_set ? true : false}
                                                         style={{ marginLeft: 12, fontSize: '12px', fontWeight: 500 }}
+                                                        strong
+                                                        // keyboard
                                                         type={item.key == 'service_information' ? this.service_panel_status().font_type : this.props[`${item.key}`]['font_type']}
                                                     // strong = {item.key == 'service_information'? is_all_set == true : this.props[`${item.key}`]['font_type'] == 'strong'}
                                                     // strong
@@ -203,11 +246,14 @@ class Information_page extends React.Component {
                         showArrow={true}
                         key={item.key}
                     >
-                        <div style={{ padding: " 16px 32px 16px 32px" }}>{item.form}</div>
+                        <div
+                            style={getStyle(item.key)}
+                        // style={item.key == 'parcel_information' || item.key == 'service_information' ? { padding: " 16px 32px 16px 32px" } : { border: "1px dashed rgb(232,232,232)", background: '#F8F8F8', padding: " 16px 32px 16px 32px" } }
+                        >{item.form}</div>
                     </Panel>
                 )}
             </Collapse>
-        )
+        );
     }
 }
 

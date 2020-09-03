@@ -3,11 +3,11 @@ import ReactDOM from 'react-dom';
 import 'antd/dist/antd.css';
 
 
-import {
-    Button, Modal, Form, Input, Radio, Select, Row,
-    Col,
-    message
-} from 'antd';
+import { Form } from '@ant-design/compatible';
+import '@ant-design/compatible/assets/index.css';
+
+
+import { Button, Modal, Input, Radio, Select, Row, Col, message } from 'antd';
 
 const FormItem = Form.Item;
 

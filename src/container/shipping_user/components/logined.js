@@ -1,9 +1,9 @@
 import React from 'react'
-import {Button} from 'antd'
+import { Button } from 'antd'
 
 export const Logined = (props) => (
     <div>
         <p>欢迎：{props.user_info.user_name}</p>
-            <Button onClick={() => props.history.push('/user/tool/rate_estimate')} type="primary">点击进入管理页面</Button> 
+        <Button onClick={() => props.history.push('/user/order/draft')} type="primary">点击进入管理页面</Button>
     </div>
 );

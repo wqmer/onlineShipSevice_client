@@ -13,18 +13,32 @@ import {
 } from '../../../util/fetch';
 
 import {
+    CheckCircleTwoTone,
+    CloseCircleTwoTone,
+    ExclamationCircleTwoTone,
+    LoadingOutlined,
+} from '@ant-design/icons';
+
+import { Form } from '@ant-design/compatible';
+import '@ant-design/compatible/assets/index.css';
+
+import {
     Alert,
     Empty,
     Spin,
     Table,
     PageHeader,
     Timeline,
-    Button, Modal, Form, Input, Radio, Select, Row,
+    Button,
+    Modal,
+    Input,
+    Radio,
+    Select,
+    Row,
     Col,
     message,
     Divider,
     Tabs,
-    Icon
 } from 'antd';
 
 import { actions as shipping_tool_actions } from '../../../reducers/shipping_platform/tool'
@@ -114,7 +128,7 @@ const Tracking_page = Form.create()(
                     title: '轨迹详情',
                     width: 550,
                     content: (
-                        <Timeline style={{ marginTop: '32px', minHeight: 100, maxHeight: 400, overflowY: 'scroll' }} >
+                        <Timeline style={{ marginTop: '36px',  maxHeight: 400 }} >
                             {
                                 select_record.data.Events.map((item) => {
                                     return (<Timeline.Item key={item.Timestamp + uid.randomUUID(6)}>
@@ -145,14 +159,13 @@ const Tracking_page = Form.create()(
             })
         }
 
-
         handel_reset = () => {
             const { getFieldDecorator, setFieldsValue, getFieldsValue, resetFields } = this.props.form
             resetFields()
         }
 
         display_result = () => {
-            const antIcon = <Icon type="loading" style={{ fontSize: 24 }} spin />;
+            const antIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
             const columns_success = [
                 {
                     title: '跟踪号',
@@ -172,36 +185,26 @@ const Tracking_page = Form.create()(
                         if (text == 'SUCCESS') {
                             return row.data == undefined ?
                                 <span>
-                                    <Icon
-                                        style={{ marginRight: '5px' }}
-                                        twoToneColor="#FFA500"
-                                        type="exclamation-circle"
-                                        theme="twoTone" />未知错误
+                                    <ExclamationCircleTwoTone style={{ marginRight: '5px' }} twoToneColor="#FFA500" />未知错误
                                 </span>
                                 :
                                 <span>
-                                    <Icon style={{ marginRight: '5px' }}
-                                        type="check-circle"
-                                        theme="twoTone"
-                                        twoToneColor="#52c41a" />成功查询
-                                </span>
+                                    <CheckCircleTwoTone style={{ marginRight: '5px' }} twoToneColor="#52c41a" />成功查询
+                                </span>;
                         } else {
                             return (
                                 <span>
-                                    <Icon style={{ marginRight: '5px' }}
-                                        type="close-circle"
-                                        theme="twoTone"
-                                        twoToneColor="#FF0000" /> 查询失败
+                                    <CloseCircleTwoTone style={{ marginRight: '5px' }} twoToneColor="#FF0000" /> 查询失败
                                 </span>
-                            )
+                            );
                         }
                     }
                 },
                 {
                     title: '当前物流状态',
-                    dataIndex: 'data.Events[0].EventDescription',
+                    dataIndex: ['data' , 'Events'],
                     key: 'status',
-                    render: (record) => record == undefined ? '无法获取信息物流状态，请点击跟踪号获取详情' : record
+                    render: (events) => events[0].EventDescription == undefined ? '无法获取信息物流状态，请点击跟踪号获取详情' : events[0].EventDescription  
                 },
                 {
                     title: '最近更新时间',

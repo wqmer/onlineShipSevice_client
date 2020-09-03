@@ -1,4 +1,4 @@
-import { Skeleton, Switch, Card, Icon, Avatar, Tag, Checkbox } from 'antd';
+import { Skeleton, Switch, Card, Avatar, Tag, Checkbox } from 'antd';
 import React, { Component } from 'react';
 import { Redirect, Router, Route, Link, NavLink } from 'react-router-dom';
 import _ from "lodash";

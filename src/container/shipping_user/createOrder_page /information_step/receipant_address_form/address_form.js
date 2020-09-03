@@ -1,4 +1,6 @@
-import { Button, Col, Row, Input, Form, Select, Collapse, Steps, Divider, Icon } from 'antd';
+// import { Form } from '@ant-design/compatible';
+import '@ant-design/compatible/assets/index.css';
+import { Form, Button, Col, Row, Input, Select, Collapse, Steps, Divider } from 'antd';
 import React, { Component } from 'react';
 import { Redirect, Router, Route, Switch, Link, NavLink } from 'react-router-dom';
 import { actions as single_order_form } from '../../../../../reducers/shipping_platform/single_order_form'
@@ -7,13 +9,15 @@ import { bindActionCreators } from 'redux'
 import _ from "lodash";
 
 
-
-const select_compoment = (props, item) => {
-    const { getFieldDecorator, setFieldsValue, getFieldsValue, resetFields } = props.form;
+// export default Address_form
+const nameMapCompoment = (props, item) => {
+    let value = ''
     let form_item_content = undefined
+
+
     switch (item.type) {
         case "input":
-            form_item_content = (<Input placeholder={item.placehold} allowClear />)
+            form_item_content = (<Input placeholder={item.placehold} allowClear={item.key != 'receipant_add1'} />)
             break;
         case "select":
             form_item_content =
@@ -24,37 +28,37 @@ const select_compoment = (props, item) => {
                 </Select>)
             break;
     }
-
-    let content = <Form.Item hasFeedback={true}
-        // validateStatus="warning"
-        label={item.label}
-    >
-        {getFieldDecorator(item.key, {
-                //先读取保存数据，如果没有设置undefined
-            initialValue: props.receipant_information ? props.receipant_information[item.key] : undefined,
-            rules: [
+    return (
+        <Form.Item
+            // hasFeedback={true}
+            // validateStatus="warning"
+            name={item.key}
+            label={item.label}
+            rules={[
                 { required: item.is_required },
                 { max: 35 }
-            ],
-        })(form_item_content)}
-    </Form.Item>
-
-    return content
+            ]}
+            initialValue={props.receipant_information ? props.receipant_information[item.key] : undefined}
+            validateTrigger={item.key == 'receipant_state' ? undefined : ["onBlur",]}
+        >
+            {form_item_content}
+        </Form.Item>)
 }
 
-const display_form_item = (props) => {
+const show_form_item = (props) => {
     let content = props.content
     let content_form = content.asset
     let content_action = content.action
     let result = []
     let row_content = []
     let curent_row_length = 0
+    // setFieldsValue({ sender_add1: { value: props.googlePlace.sender_add1 } })
 
     for (var i = 0; i < content_form.length; i++) {
         row_content.push(content_form[i])
         curent_row_length = curent_row_length + content_form[i].span_value
         if (curent_row_length == 24 || (curent_row_length < 24 && i == content_form.length - 1)) {
-            let element = <Row key={i} gutter={24}> {row_content.map((item, index) => { return (<Col key={item.key} span={item.span_value} >{select_compoment(props, item)} </Col>) })} </Row>
+            let element = <Row key={i} gutter={24}> {row_content.map((item, index) => { return (<Col key={item.key} span={item.span_value} >{nameMapCompoment(props, item)} </Col>) })} </Row>
             row_content = []
             curent_row_length = 0
             result.push(element)
@@ -65,15 +69,46 @@ const display_form_item = (props) => {
     return result
 }
 
-const Address_form = Form.create({
-    onFieldsChange(props, changedValues, allValues) {
-        props.onChange(props.form, props.form.getFieldsValue());
-    },
-})(props => {
-    return (
-        <Form >{display_form_item(props)} </Form>
-    )
-})
+class ReceipantAddressForm extends React.Component {
+    constructor(props) {
+        super(props)
+        this.formRef = React.createRef();
+    }
+    state = {
+          is_first_render : true ,
+    }
+
+    componentDidMount() {
+        this.props.onRef(this)
+    }
+
+    shouldComponentUpdate(nextProps, nextState) {
+        const current_form = this.props.receipant_information
+        const next_form = nextProps.receipant_information
+        if (_.isEqual(current_form, next_form) && !this.state.is_first_render) return false
+        if (this.state.is_first_render)this.setState({is_first_render:false})
+        return true
+    }
 
 
-export default Address_form
+    render() {
+        console.log('I did render from receipant-address-form')
+        const current_form = this.formRef.current
+        return (
+            <Form
+                ref={this.formRef}
+                layout='vertical'
+                onFieldsChange={(changedFields, allFields) => {        
+                    this.props.onChange(current_form, current_form.getFieldsValue())
+                }}
+                // onValuesChange={(changedFields, allFields) => {      
+                //     this.props.onChange(current_form, current_form.getFieldsValue())
+                // }}
+            >
+                {show_form_item(this.props)}
+            </Form>
+        )
+    }
+}
+
+export default ReceipantAddressForm

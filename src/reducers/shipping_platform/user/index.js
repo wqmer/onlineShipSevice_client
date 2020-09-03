@@ -7,6 +7,7 @@ const initialState = {
 
 export const actionsTypes = {
     USER_LOGIN: "USER_LOGIN",
+    USER_LOGOUT: "USER_LOGOUT",
     USER_REGISTER: "USER_REGISTER",
     RESPONSE_USER_INFO: "RESPONSE_USER_INFO",
     USER_AUTH: "USER_AUTH"
@@ -17,6 +18,11 @@ export const actions = {
         return {
             type: actionsTypes.USER_LOGIN,
             data
+        }
+    },
+    get_logout: function () {
+        return {
+            type: actionsTypes.USER_LOGOUT,
         }
     },
     get_register: function (data) {

@@ -1,5 +1,21 @@
 
-import { Form, Radio, Drawer, Col, Row, message, Checkbox, Alert, Button, Typography, Select, Collapse, Steps, Divider, Icon } from 'antd';
+import { Form } from '@ant-design/compatible';
+import '@ant-design/compatible/assets/index.css';
+import {
+    Radio,
+    Drawer,
+    Col,
+    Row,
+    message,
+    Checkbox,
+    Alert,
+    Button,
+    Typography,
+    Select,
+    Collapse,
+    Steps,
+    Divider,
+} from 'antd';
 import React, { Component } from 'react';
 import { Redirect, Router, Route, Switch, Link, NavLink } from 'react-router-dom';
 import _ from "lodash";
@@ -50,19 +66,18 @@ class Payment_page extends React.Component {
     }
 
     render() {
-
         return (
             <div >
-
                 <Collapse
                     activeKey={this.state.active_key}
                     // accordion
                     // expandIcon={({ isActive }) => <span><Icon type="caret-left" rotate={isActive ? -90 : 0} /></span>}
                     // style={{ background: '#fff', }}
-                // style={{   background: '#f7f7f7', }}
-                // bordered={false}
-                // expandIconPosition="right"
-                // defaultActiveKey={['sender_information']}
+                    style={{ background: '#fff', boxShadow: 'rgb(217, 217, 217) 1px 1px 7px 0px', }}
+                    // bordered={false}
+                    // expandIconPosition="right"
+                    // defaultActiveKey={['sender_information']}
+                    ghost
                 >
 
                     {payment_method.map(item =>
@@ -104,7 +119,7 @@ class Payment_page extends React.Component {
                             showArrow={false}
                         // key={item.key}
                         >
-                            <div style={{ padding: " 16px 32px 16px 64px" }}>{item.content}</div>
+                            <div style={{ border: "1px dashed rgb(232,232,232)", background: '#F8F8F8',  padding: " 16px 32px 16px 32px" }}>{item.content}</div>
                         </Panel>
                     )}
                 </Collapse>

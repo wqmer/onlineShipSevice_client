@@ -1,4 +1,7 @@
-import { Typography, Button, Col, Row, Input, Form, Select, Collapse, Steps, Divider, Icon } from 'antd';
+import { FileAddOutlined } from '@ant-design/icons';
+import { Form } from '@ant-design/compatible';
+import '@ant-design/compatible/assets/index.css';
+import { Typography, Button, Col, Row, Input, Select, Collapse, Steps, Divider } from 'antd';
 import React, { Component } from 'react';
 import { Redirect, Router, Route, Switch, Link, NavLink } from 'react-router-dom';
 import _ from "lodash";
@@ -18,14 +21,14 @@ const { Panel } = Collapse;
 
 const content = {
     form: [
-        { "label": '订单号', "key": "order_id", "is_required": false, "message": undefined, "placehold": '自定义单号，选填，如不填写，系统自动完成', "span_value": 12, type: 'input', },
-        { "label": 'sku', "key": "sku", "is_required": false, "message": undefined, "placehold": '产品的sku', "span_value": 12, type: 'input', },
-        { "label": '相同多件', "key": "same_pack", "is_required": false, "message": undefined, "placehold": '相同件数量，默认一件', "span_value": 6, type: 'input', },
-        { "label": '重量', "key": "weight", "is_required": true, "message": undefined, "placehold": '重量', "span_value": 6, type: 'input', },
-        { "label": '长', "key": "length", "is_required": true, "message": undefined, "placehold": '长度', "span_value": 4, type: 'input', },
-        { "label": '宽', "key": "width", "is_required": true, "message": undefined, "placehold": '宽度', "span_value": 4, type: 'input', },
-        { "label": '高', "key": "height", "is_required": true, "message": undefined, "placehold": '高度', "span_value": 4, type: 'input', },
-
+        { "label": '相同多件', "key": "same_pack", "is_required": false, "message": undefined, "placehold": '默认一件', "span_value": 4, type: 'input', },
+        { "label": '重量', "key": "weight", "is_required": true, "message": undefined, "placehold": '重量', "span_value": 5, type: 'input', },
+        { "label": '长', "key": "length", "is_required": true, "message": undefined, "placehold": '长度', "span_value": 5, type: 'input', },
+        { "label": '宽', "key": "width", "is_required": true, "message": undefined, "placehold": '宽度', "span_value": 5, type: 'input', },
+        { "label": '高', "key": "height", "is_required": true, "message": undefined, "placehold": '高度', "span_value": 5, type: 'input', },
+        { "label": '订单号', "key": "order_id", "is_required": false, "message": undefined, "placehold": '自定义单号，选填，如不填写，系统自动完成', "span_value": 14, type: 'input', },
+        { "label": '备注信息', "key": "reference", "is_required": false, "message": undefined, "placehold": '运单上自定义信息，选填', "span_value": 10, type: 'input', },
+        // { "label": 'sku', "key": "sku", "is_required": false, "message": undefined, "placehold": '产品的sku', "span_value": 9, type: 'input', },
     ],
     action: [
         // { "key": "save_link", "placehold": '保存', "span_value": 2, type: 'save_link', },
@@ -161,8 +164,16 @@ class Parcel extends React.Component {
         }
         this.props.set_form_info(obj)
     }
+    
+    shouldComponentUpdate(nextProps, nextState) {
+        const current_form = this.props.parcel_information
+        const next_form = nextProps.parcel_information
+        if(_.isEqual(current_form ,next_form)) return false
+        return true
+    }
 
     render() {
+        // console.log('parcel_form form did render')
         return (
             <div>
                 {this.props.parcel_information.parcel_list.map((item, index) =>
@@ -180,9 +191,9 @@ class Parcel extends React.Component {
                         id_no={item.key}
                         tag={index + 1}
                         remove={(id_no) => this.remove_one_pack(id_no)} />)}
-                <div><a onClick={() => this.add_one_package()} ><Icon type="file-add" /> 添加一个包裹</a></div>
+                <div><a onClick={() => this.add_one_package()} ><FileAddOutlined /> 添加一个包裹</a></div>
             </div>
-        )
+        );
     }
 }
 

@@ -4,7 +4,7 @@ import { Switch, Route } from 'react-router-dom'
 import { bindActionCreators } from 'redux'
 import { Popconfirm, message } from 'antd';
 import Login from "../../../components/Login/loginForm";
-import { Logined } from "../components/logined";
+import { Logined } from "../../../components/Logined";
 import { actions as user_account_actions } from '../../../reducers/shipping_platform/user'
 
 class UserLogin extends Component {
@@ -15,7 +15,9 @@ class UserLogin extends Component {
         const { login, register } = this.props;
         return (
             <div className='login'>
-                {this.props.user_info.user_id ? <Logined history={this.props.history} user_info={this.props.user_info} /> : <Login login={login} />}
+                {this.props.user_info.user_id ? <Logined history={this.props.history} user_info={this.props.user_info} />
+                    : <Login login={(data) => login(data)}
+                    />}
             </div>
         )
     }

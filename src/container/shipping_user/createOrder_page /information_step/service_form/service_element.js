@@ -1,4 +1,4 @@
-import { Skeleton, Switch, Card, Icon, Avatar, Tag, Checkbox } from 'antd';
+import { Skeleton, Switch, Card, Avatar, Tag, Checkbox } from 'antd';
 import React, { Component } from 'react';
 import { Redirect, Router, Route, Link, NavLink } from 'react-router-dom';
 import _ from "lodash";
@@ -24,7 +24,7 @@ class My_service_card extends React.Component {
                     headStyle={{ height: 16 }}
                     hoverable={true}
                     size='small'
-                    style={{ width: 250 }}
+                    style={{ width: 250 , border:"1px solid rgb(200,200,200)"}}
                     extra={this.state.loading ? undefined : tag}
                     title={this.state.loading ? undefined : <span style={{ paddingLeft: 12 }}>折扣价：$ {rate} </span>}
                 >

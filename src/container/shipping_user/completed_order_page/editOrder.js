@@ -3,7 +3,9 @@ import ReactDOM from 'react-dom';
 import 'antd/dist/antd.css';
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
-import { Button, Modal, Form, Input, Radio, Select, message } from 'antd';
+import { Form } from '@ant-design/compatible';
+import '@ant-design/compatible/assets/index.css';
+import { Button, Modal, Input, Radio, Select, message } from 'antd';
 
 import {actions} from '../../../reducers/saveOrder'
 import EditableForm from '../components/editableFrom'
