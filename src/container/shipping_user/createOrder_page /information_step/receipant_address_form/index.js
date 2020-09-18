@@ -48,31 +48,41 @@ class Receipant_Address_Form extends React.Component {
     save_data = (form, data, step) => {
         let obj = {}
         obj[`${step}`] = data
-        obj['service_information'] = {}
+        obj['service_information'] = this.props.service_information
+        obj['service_information']['is_required_fetch'] = true
         //重置服务面板
         let radd_2 = data.receipant_add2 ? " , " + data.receipant_add2 + ' , ' : " , "
+
+        let update_obj = {
+            'setting': {},
+            'billing_information': {
+                'on_display': false
+            }
+        }
+        update_obj['setting']['open_panel'] = this.props.setting.open_panel.filter(item => item != 'service_information')
+
         if (!is_ready_form(receipant_content, this.props, form)) {   //此表格还没完成就设置编辑，否则就设置title
             //信息处于未完成状态时 如果面板打开或者已经选择服务，就强制收起和修改
             if (this.props.setting.open_panel.includes('service_information') || this.props.service_information.service_name) {
-                let update_obj = { service_information: {}, setting: {} }
+            
                 update_obj['service_information'] = {
                     is_select: false,
                     service_name: undefined,
                     panel_title: '请先完成输入信息',
                     font_type: 'secondary',
-                }
-                update_obj['setting']['open_panel'] = this.props.setting.open_panel.filter(item => item != 'service_information')
-                this.props.update_form_info(update_obj)
+                }            
+        
             }
 
             obj[`${step}`]['panel_title'] = '编辑中'
             obj[`${step}`]['font_type'] = 'warning'
         } else {
-            obj[`${step}`]['panel_title'] = data.receipant_name + ' , ' + data.receipant_add1 + radd_2 + data.receipant_city + ' ' + data.receipant_state + ' ' + data.receipant_zip_code
+            obj[`${step}`]['panel_title'] = data.receipant_name + ' , ' + data.receipant_add1 + radd_2 + data.receipant_city + ' , ' + data.receipant_state + ' ' + data.receipant_zip_code
             obj[`${step}`]['font_type'] = 'strong'
         }
+        this.props.update_form_info(update_obj)
+
         obj[`${step}`]['is_ready'] = is_ready_form(receipant_content, this.props, form)
-        obj['service_information']['is_required_fetch'] = true
         this.props.get_form_info(obj)
     };
 
@@ -92,13 +102,16 @@ class Receipant_Address_Form extends React.Component {
         const current_form = this.child.formRef.current
         let data = current_form.getFieldsValue()
         var address = this.autocomplete.getPlace().address_components
+        var address_name = this.autocomplete.getPlace().name
+
         const getAddressComponent = (addressArray, type) => {
             return addressArray.find(item => _.isEqual(item.types, type)) ? addressArray.find(item => _.isEqual(item.types, type)).short_name : ''
         }
+        const getState = getAddressComponent(address, ["country", "political"]) == 'US'? getAddressComponent(address, ["administrative_area_level_1", "political"]) :getAddressComponent(address, ["country", "political"])
         let udpateData = {
-            receipant_add1: getAddressComponent(address, ['street_number']) + ' ' + getAddressComponent(address, ['route']),
+            receipant_add1: address_name,
             receipant_city: getAddressComponent(address, ["locality", "political"]),
-            receipant_state: getAddressComponent(address, ["administrative_area_level_1", "political"]),
+            receipant_state: getState,
             receipant_zip_code:getAddressComponent(address, ["postal_code"]),
 
         }
@@ -109,7 +122,7 @@ class Receipant_Address_Form extends React.Component {
     componentDidMount() {
         // this.props.onRef(this)
         this.autocomplete = new google.maps.places.Autocomplete(document.getElementById('receipant_add1'), {})
-        this.autocomplete.setFields(['address_components']);
+        this.autocomplete.setFields(['address_components', 'name']);
         this.autocomplete.addListener("place_changed", () => this.handlePlaceSelect())
     }
 

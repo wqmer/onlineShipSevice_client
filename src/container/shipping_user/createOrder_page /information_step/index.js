@@ -112,7 +112,7 @@ class Information_page extends React.Component {
     }
 
     state = {
-         setting : { ...this.props.setting}
+        setting: { ...this.props.setting }
     }
 
     postBill = (rate) => this.props.postBill(rate)
@@ -165,7 +165,7 @@ class Information_page extends React.Component {
     //     if(_.isEqual(current_form ,next_form)) return false
     //     return true
     // }
-    
+
 
     render() {
         // console.log(this.state.setting.open_panel)
@@ -183,7 +183,7 @@ class Information_page extends React.Component {
         return (
             <Collapse
                 expandIcon={({ isActive }) => <span><CaretLeftOutlined rotate={isActive ? -90 : 0} /></span>}
-                // destroyInactivePanel = {true}
+                destroyInactivePanel={true}
                 style={{ padding: 0, background: '#fff', boxShadow: 'rgb(217, 217, 217) 1px 1px 7px 0px', }}
                 // style={{   background: '#fff', }}
                 // bordered={false}
@@ -198,13 +198,13 @@ class Information_page extends React.Component {
                     let obj = { setting: {} }
                     obj['setting']['open_panel'] = e
                     // this.setState({ ...obj })
-                    this.props.update_form_info(obj)         
+                    this.props.update_form_info(obj)
                 }}
                 ghost
             >
                 {form_content(this).map((item, index) =>
                     <Panel
-                        forceRender = {item.key != 'service_information' }
+                        forceRender={item.key != 'service_information'}
                         disabled={item.key == 'service_information' && !is_all_set}
                         style={{
 
@@ -240,7 +240,8 @@ class Information_page extends React.Component {
 
                                                     </Text>
                                                 </span>
-                                            </span>} />
+                                            </span>}
+                                    />
                                 </Steps>
                             </div>}
                         showArrow={true}
@@ -258,7 +259,7 @@ class Information_page extends React.Component {
 }
 
 function mapStateToProps(state) {
-    // console.log(state)
+    // console.log(state.shipping_platform_single_order.form)
     return {
         // form: state.shipping_platform_single_order.form,
         sender_information: state.shipping_platform_single_order.form.sender_information,

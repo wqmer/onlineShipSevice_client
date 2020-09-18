@@ -56,7 +56,7 @@ const select_compoment = (props, item, parcel) => {
                 { max: 35 }
             ]}
             initialValue = {parcel ? parcel[item.key] : undefined}
-            validateTrigger =  {["onBlur"]}
+            validateTrigger =  {["onBlur" ]}
         >
           {form_item_content}
         </Form.Item>
@@ -110,7 +110,7 @@ const Parcel_form = (props) => {
         <Form
             layout='vertical'
             form={form}
-            onValuesChange={(changedFields, allFields) => {
+            onFieldsChange={(changedFields, allFields) => {
                 // this.props.onChangeValue(changedFields)              
               props.onChange(form, form.getFieldsValue())
             }}
@@ -155,7 +155,7 @@ class Parcel_component extends React.Component {
             <div>
                 <Collapse
                     key={this.props.id_no}
-                    style={{ marginBottom: 16, background: '#f7f7f7', }}
+                    style={{ marginBottom: 12, background: '#f7f7f7', }}
                     defaultActiveKey={this.props.parcel.is_panel_opened ? [this.props.id_no] : []}
                     onChange={(e) => this.props.handle_panel(e, this.props.id_no)}
                 >

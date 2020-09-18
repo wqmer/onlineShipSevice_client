@@ -32,6 +32,7 @@ const initialState = {
         service_name: undefined,
         panel_title: '请先完成输入信息',
         font_type: 'secondary',
+        service_content:[]
     },
     billing_information: {
         on_display: false,

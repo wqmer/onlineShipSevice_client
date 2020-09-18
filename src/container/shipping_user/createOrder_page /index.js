@@ -99,19 +99,16 @@ class Create_order_page extends React.Component {
         });
     };
 
-    postBill = (rate) => {
-        let obj = {
-            'billing_information': {}
-        }
-        obj.billing_information.on_display = true
-        obj.billing_information.total = rate
-        this.props.set_form_info(obj)
-
-        // this.setState({
-        //     bill_total: rate,
-        //     visible: true,
-        // });
-    }
+    // postBill = (rate) => {
+    //     let obj = {
+    //         'billing_information': {
+    //             'on_display' :false
+    //         }
+    //     }
+    //     obj.billing_information.on_display = true
+    //     obj.billing_information.total = rate
+    //     this.props.set_form_info(obj)
+    // }
 
     onClose = () => {
         this.setState({
@@ -309,6 +306,7 @@ class Create_order_page extends React.Component {
 
     reset = () => this.setState({ current: 0, step_status: 'process' })
 
+
     show_action = (current) => {
 
         let Button_props = [
@@ -364,6 +362,21 @@ class Create_order_page extends React.Component {
         )
     }
 
+    display_billing_detail = () => {
+        //  [{
+        //   package_key: "first_pak"
+        //   price: 2.54
+        //   weight: 2
+        //   zone: 1
+        // }]
+        let billingDetail = this.props.billing_information.detail.map((item, index) => {
+            return (<Text key = {item.package_key}> 包裹 {index + 1} : 计费重量 - {item.weight} , 计费区域 - zone {item.zone} , 邮费 - {item.price} </Text>)
+        })
+
+
+        return billingDetail
+    }
+
     shouldComponentUpdate(nextProps, nextState) {
         // console.log('nextprops is ' + nextProps.header_hidden)
         // console.log('this props is ' + this.props.header_hidden)
@@ -378,9 +391,10 @@ class Create_order_page extends React.Component {
     }
 
     render() {
+        console.log(this.props.billing_information.detail)
         const { current } = this.state;
         return (
-            <div>
+            <div >
                 <div style={{ background: '#fff', boxShadow: 'rgb(217, 217, 217) 1px 1px 7px 0px', padding: 32, }}>
                     <Steps
                         current={current}
@@ -413,15 +427,19 @@ class Create_order_page extends React.Component {
                         </div>}
                     // headerStyle ={{paddingLeft : "35%"}}
                     // bodyStyle ={{overflow:'visible'}}
-                    drawerStyle={{ overflow: 'hidden' }}
-                    style={{ paddingLeft: this.props.collapsed ? 80 : 256 }}
+                    // drawerStyle={{ overflow: 'hidden' }}
+                    getContainer='#content'
+                    style={{ position: 'absolute' }}
+                    // style={{ paddingLeft: this.props.collapsed ? 80 : 256 }}
                     placement="bottom"
                     zIndex={200}
                     mask={false}
                     closable={false}
                     visible={this.props.billing_information.on_display}
+                    // visible={this.state.visible}
                     height={this.state.is_expand ? 200 : 48}
                 >
+                   <Space>{this.props.billing_information.detail? this.display_billing_detail() : undefined}</Space> 
                 </Drawer>
 
                 {/* <Button type="primary" onClick={this.showDrawer}>

@@ -13,6 +13,8 @@ import {
     Steps,
     Divider,
     Checkbox,
+    Skeleton,
+    Empty,
 } from 'antd';
 import React, { Component } from 'react';
 import { Redirect, Router, Route, Switch, Link, NavLink } from 'react-router-dom';
@@ -30,7 +32,6 @@ import {
 import { actions as single_order_form } from '../../../../../reducers/shipping_platform/single_order_form'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-
 
 const uid = new ShortUniqueId();
 const { Text } = Typography;
@@ -69,91 +70,129 @@ const Service_form = Form.create()(
 
         state = {
             is_fetching: false,
-            service_content: service_array
+            service_content: []
         }
 
         handle_select = (key) => {
-            let update_service = this.state.service_content.map(item => {
+            let update_service = this.props.service_information.service_content.map(item => {
                 item.check = item.service_name == key ? true : false
                 return item
             })
-            this.setState({
-                service_content: update_service
-            })
 
-            let obj = { 'service_information': {} }
+            let select_total_rate = update_service.find(item => item.check == true).rate
+            let select_total_billing_detail = update_service.find(item => item.check == true).packageList
+            // this.setState({
+            //     service_content: update_service
+            // })
+        
+            let obj = { 
+                'service_information': {} ,
+                'billing_information':{
+                    'total':select_total_rate,
+                    "detail":select_total_billing_detail,
+                    'on_display' :true
+                }
+            }
             obj['service_information']['panel_title'] = '当前选择 ' + key
             obj['service_information']['service_name'] = key
             obj['service_information']['is_select'] = true
+            obj['service_information']['service_content'] = update_service
 
             this.props.get_form_info(obj)
-            this.props.postBill(update_service.find(item => item.check == true).rate)
+            // this.props.postBill(update_service.find(item => item.check == true).rate)
         }
 
         fetch_service() {
-            // this.setState({ is_fetching: true });
-            post('/user/get_service_rate')
+            this.setState({ is_fetching: true });
+            post('/user/get_rate', this.props.order_form)
                 .then(payload => {
-                    console.log(payload)
+                    let services = payload.data
+                    let service_content = []
+                    if (services.length > 0) {
+                        service_content = services.map(item => {
+                            let serviceInfo = {
+                                image_src: item[0].data.asset.logo_url,
+                                service_name: item[0].data.asset.name,
+                                service_description: item[0].data.asset.description,
+                                code: item[0].data.asset.code,
+                                zone:item[0].data.zone,
+                                check: false,
+                                rate: parseFloat(item.map(e => e.data.price.total).reduce((a, c) => a + c)),
+                                packageList: item.map(e => { return { package_key: e.data.package_key, weight: e.data.weight, zone: e.data.zone, price: e.data.price.total } })
+                            }
+                            return serviceInfo
+                        })
+                    }
                     let obj = { 'service_information': {} }
                     obj['service_information']['is_required_fetch'] = false
-                    this.props.get_form_info(obj)
-                    // this.setState({ is_fetching: false });
-                    // this.setState({})
+                    obj['service_information']['service_content'] = service_content
+                    this.props.update_form_info(obj)
+                    this.setState({ is_fetching: false });
+                    // this.setState({ is_fetching: false, service_content: service_content });
                 })
                 // .catch(error => { notification.error(format.notfication_remote_server_error(handle_error(error).message)) })
                 .catch(error => { console.log(error) })
             // .finally(this.props.get_order_count())
         }
 
-        // componentWillReceiveProps = (nextProps) => {
-        //     // todo 当传进来的参数 地址，包裹 重量数量 都有变化时 重新获取服务 fetch
-        //     // console.log(nextProps )
-        //     // console.log(this.props.is_all_set() == nextProps.is_all_set())
-        //     // console.log(nextProps.is_all_set())
-        //     // nextProps.is_all_set() && 
-        //     // this.fetch_service()
-        //     // console.log('did test from componentWillReceiveProps')
+        // UNSAFE_componentWillReceiveProps = (nextProps) => {
+        //     // 当传进来的参数 地址，包裹 重量数量 都有变化时 重新获取服务 fetch
+        //     console.log(this.props.is_all_set())
+        //     if (this.props.is_all_set() && this.props.service_information.is_required_fetch) {
+        //         this.fetch_service()
+        //     }
         // }
+
         shouldComponentUpdate(nextProps, nextState) {
-            const current_form = this.props.service_information
-            const next_form = nextProps.service_information
-            if(_.isEqual(current_form ,next_form)) return false
-            return true
+            return (!_.isEqual(this.props.service_information, nextProps.service_information) || this.state.is_fetching != nextState.is_fetching)
         }
-        
-        componentDidUpdate(prevProps) {
-            // Typical usage (don't forget to compare props):
-            // console.log(prevProps.service_information.is_required_fetch)
-            if (this.props.is_all_set() && this.props.service_information.is_required_fetch) {
-                this.fetch_service()
-            }
-        }
+
+        // componentDidUpdate(prevProps) {
+        // Typical usage (don't forget to compare props):
+        // console.log(prevProps.service_information.is_required_fetch)
+        // if (this.props.is_all_set() && this.props.service_information.is_required_fetch) {
+        //     this.fetch_service()
+        // }
+        // }
 
 
         componentDidMount = () => {
             //首次获取服务 fetch 服务
-            this.fetch_service()
-            // console.log('did test from componentDidMount')
             //fetch shipping mehtod
+            console.log('did redner from componentDidMount')
+            console.log(this.props.service_information.service_content)
+            if(this.props.service_information.is_required_fetch)this.fetch_service()
         }
 
         render() {
-            // console.log('service_form did render')
+            console.log('service_form did render')
+            const service_content = this.props.service_information.service_content
+            const isGetService = () => {
+                  if(service_content){
+                      return (service_content.length == 0)
+                  }
+                  return true 
+            }
+
+
             return (
                 <div>
                     <Row type="flex" justify="center">
-                        <Space size = {32}>
-                            {this.state.service_content.map(item =>
-                                <Col style={{ marginTop: 24, }} key={item.service_name} >
-                                    <My_service_card
-                                        select={(key) => this.handle_select(key)}
-                                        // key={item.service_name}
-                                        service={item}
-                                        check={this.props.service_information.service_name == item.service_name}
-                                    />
-                                </Col>)}
-                        </Space>
+                        <Skeleton loading={this.state.is_fetching} active>
+                            {isGetService()? <Empty description='没有可用服务' /> :
+                                <Space size={32}>
+                                    {service_content.map(item =>
+                                        <Col style={{ marginTop: 24, }} key={item.service_name} >
+                                            <My_service_card
+                                                loading={this.state.is_fetching}
+                                                select={(key) => this.handle_select(key)}
+                                                // key={item.service_name}
+                                                service={item}
+                                                check={this.props.service_information.service_name == item.service_name}
+                                            />
+                                        </Col>)}
+                                </Space>}
+                        </Skeleton>
                     </Row>
                 </div>
             )
@@ -164,6 +203,10 @@ const Service_form = Form.create()(
 
 function mapStateToProps(state) {
     return {
+        order_form: state.shipping_platform_single_order.form,
+        receipant_information: state.shipping_platform_single_order.form.receipant_information,
+        parcel_information: state.shipping_platform_single_order.form.parcel_information,
+        sender_information: state.shipping_platform_single_order.form.sender_information,
         service_information: state.shipping_platform_single_order.form.service_information,
         setting: state.shipping_platform_single_order.form.setting,
     }
@@ -172,6 +215,7 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
     return {
         get_form_info: bindActionCreators(single_order_form.get_form_info, dispatch),
+        update_form_info: bindActionCreators(single_order_form.update_form_info, dispatch),
     }
 }
 

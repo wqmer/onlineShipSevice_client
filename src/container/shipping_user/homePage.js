@@ -85,7 +85,7 @@ const submenus = [
 
   { name: '创建运单', iconType: 'file-add', key: 'create', url: '/create', children: [{ url: '/single_order', iconType: "edit", name: '寄单件' }, { url: '/batch', iconType: "form", name: '传批量' }] },
   {
-    name: '订单管理', iconType: 'database', key: 'order_log', url: '/order_log', children: [ { url: '/ready_to_ship', iconType: 'pushpin', name: '待处理' }, { url: '/completed', iconType: 'carry-out', name: '已完成' }, { iconType: 'exclamation-circle', url: '/problem', name: '问题单' }]
+    name: '订单管理', iconType: 'database', key: 'order_log', url: '/order_log', children: [{ url: '/ready_to_ship', iconType: 'pushpin', name: '待处理' }, { url: '/completed', iconType: 'carry-out', name: '已完成' }, { iconType: 'exclamation-circle', url: '/problem', name: '问题单' }]
   },
   { name: '便捷工具', iconType: 'tool', key: 'tool', url: '/tool', children: [{ url: '/rate_estimate', iconType: 'calculator', name: '运费试算' }, { url: '/tracking', iconType: 'file-search', name: '轨迹查询' }] },
   { name: '店铺管理', iconType: 'shopping-cart', key: 'store', url: '/store', children: [{ url: '/amazon', iconType: 'amazon', name: '亚马逊' }] },
@@ -208,12 +208,12 @@ class user extends Component {
     //显示带菜单menu
     function display_menu(parentRouter, menuItem) {
       return (
-        <Menu.Item
+        <Menu.Item     
           key={menuItem.url}
           danger={menuItem.url == '/failed' ? true : false}
         >
-          <Link to={`/user/${parentRouter}${menuItem.url}`} >
-            <LegacyIcon type={porcessing && menuItem.iconType == "loading-3-quarters" ? "loading" : menuItem.iconType} />
+          <Link  to={`/user/${parentRouter}${menuItem.url}`} >
+            <LegacyIcon  type={porcessing && menuItem.iconType == "loading-3-quarters" ? "loading" : menuItem.iconType} />
             {menuItem.name}
           </Link>
           {/* <span  ><LegacyIcon type={porcessing && menuItem.iconType == "loading-3-quarters" ? "loading" : menuItem.iconType} />{menuItem.name}</span> */}
@@ -300,12 +300,12 @@ class user extends Component {
     const childMapToName = (submenus) => {
       const children = submenus.find(i => i.key == current_parent).children
       const child = children.find(i => i.url == '/' + current_page)
-      const chineseName = child?child.name : undefined
+      const chineseName = child ? child.name : undefined
       return chineseName ? chineseName : '错误页404'
     }
 
     // console.log(this.props)
- 
+
 
     // console.log('current_parent is ' + current_parent)  //http://localhost:8082/user/order/completed  => order
     // console.log('current_page is ' + current_page) //http://localhost:8082/user/order/completed  => completed 
@@ -443,21 +443,21 @@ class user extends Component {
                     width: '800px',
                     height: '48px'
                   }}>
-                    
+
                   {/* <Demo_search_bar_top /> */}
                   <Space align="baseline" size={1}>
                     {/* <InputWithoutBorder/> */}
-                    <Balance value ={this.props.balance} />
+                    <Balance value={this.props.balance} />
                     <Demo_notification />
-                    <Demo_avatar name = 'kimi' logout={() => logout()} />
+                    <Demo_avatar name='kimi' logout={() => logout()} />
                   </Space>
                 </div>
               </Header> : null}
           </Animate>
           {/* <Layout style={{ background: '#fff', overflow: 'visible' }}>
             <Layout style={{ background: '#fff', marginTop: 64, }}> */}
-          <Layout style={{ marginTop: 64 }}>
-            <Content style={{ background: '#F8F8F8', overflow: 'scroll', minHeight: 800 }}>
+          <Layout id="content"  style={{ position: 'relative' , marginTop: 64 }}>
+            <Content style={{ background: '#F8F8F8', overflow: 'scroll',height: 936  }}>
               <Switch>
                 <Route path={`${url}/create/single_order`}
                   render={(props) => (
@@ -504,7 +504,7 @@ class user extends Component {
 function mapStateToProps(state) {
   // console.log(state)
   return {
-    balance : state.shipping_platform_user.account.user_info.balance,
+    balance: state.shipping_platform_user.account.user_info.balance,
     status_code: state.globalState.status_code,
     message: state.globalState.message,
     // order: state.shipping_platform_user.order.result,
@@ -518,7 +518,7 @@ function mapDispatchToProps(dispatch) {
     logout: bindActionCreators(user_account_actions.get_logout, dispatch),
     // get_all_order: bindActionCreators(actions_user_order.get_all_order, dispatch),
     // get_order_count: bindActionCreators(actions_user_order.get_order_count, dispatch),
-    user_auth : bindActionCreators(user_account_actions.user_auth, dispatch),
+    user_auth: bindActionCreators(user_account_actions.user_auth, dispatch),
 
   }
 }

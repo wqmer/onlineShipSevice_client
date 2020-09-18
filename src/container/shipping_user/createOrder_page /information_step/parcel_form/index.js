@@ -55,9 +55,9 @@ const merge_parcel_info = (data) => {
     }
     //如果只有一个包裹时，或在编辑 或已完成
     if (array_unfinished.length + array_finished.length == 1) {
-        title = array_finished.length == 1 ? `当前录入1个包裹，重量${total_weight} , 尺寸为${data[0].pack_info.length} x ${data[0].pack_info.width} x ${data[0].pack_info.height}` : "1个包裹正在编辑"
+        title = array_finished.length == 1 ? `当前录入 1 个包裹，重量 ${total_weight} , 尺寸为 ${data[0].pack_info.length} x ${data[0].pack_info.width} x ${data[0].pack_info.height}` : "1个包裹正在编辑"
     } else {
-        title = array_unfinished.length == 0 ? `当前录入${array_finished.length}个包裹，总重量${total_weight}` : `当前录入${array_finished.length}个包裹，总重量${total_weight}，${array_unfinished.length}个正在编辑`
+        title = array_unfinished.length == 0 ? `当前录入 ${array_finished.length} 个包裹，总重量 ${total_weight}` : `当前录入${array_finished.length}个包裹，总重量${total_weight}，${array_unfinished.length}个正在编辑`
     }
 
     font_type = array_unfinished.length > 0 ? "warning" : 'strong'
@@ -80,23 +80,28 @@ class Parcel extends React.Component {
             }
             return item
         })
-       
-        // console.log(update_data)
-        // merge_parcel_info(update_data).title
+
+        let update_obj = {
+            'setting': {},
+            'billing_information': {
+                'on_display': false
+            }
+        }
+        update_obj['setting']['open_panel'] = this.props.setting.open_panel.filter(item => item != 'service_information')
         if (!merge_parcel_info(update_data).is_ready) {
             //信息处于未完成状态时 如果面板打开或者已经选择服务，就强制收起和修改
             if (this.props.setting.open_panel.includes('service_information') || this.props.service_information.service_name) {
-                let update_obj = { service_information: {}, setting: {} }
+
                 update_obj['service_information'] = {
                     is_select: false,
                     service_name: undefined,
                     panel_title: '请先完成输入信息',
                     font_type: 'secondary',
                 }
-                update_obj['setting']['open_panel'] = this.props.setting.open_panel.filter(item => item != 'service_information')
-                this.props.update_form_info(update_obj)
             }
         }
+        this.props.update_form_info(update_obj)
+
 
         let obj = {
             parcel_information: {
@@ -113,29 +118,65 @@ class Parcel extends React.Component {
         //输入完毕需要去考虑改动标题
     }
 
+    close_service_panel = () => {
+        let update_obj = {
+            'setting': {},
+            'billing_information': {
+                'on_display': false
+            }
+        }
+        update_obj['setting']['open_panel'] = this.props.setting.open_panel.filter(item => item != 'service_information')
+        this.props.update_form_info(update_obj)
+    }
+
     add_one_package() {
+        this.close_service_panel()
         let data = {
             key: uid.randomUUID(6),
             panel_title: '未录入',
             font_type: 'warning',
-            pack_info: undefined,
+            pack_info: {
+            },
             is_panel_opened: true,
         }
+
+
         let obj = {
+            'setting': {},
+            'service_information': {},
             'parcel_information': {
                 "parcel_list": []
             }
         }
-        //增加一个包裹不需要考虑标题
+
+        //增加一个包裹是需要考虑验证
         obj['service_information'] = {}
-        obj['parcel_information']['parcel_list'] = this.props.parcel_information.parcel_list.concat(data)
-        obj['service_information']['is_required_fetch'] = true
+        obj['service_information'] = {
+            is_select: false,
+            service_name: undefined,
+            panel_title: '请先完成输入信息',
+            font_type: 'secondary',
+            is_required_fetch: true,
+        }
+        // obj['setting']['open_panel'] = this.props.setting.open_panel.filter(item => item != 'service_information')
+        let update_data = obj['parcel_information']['parcel_list'] = this.props.parcel_information.parcel_list.concat(data)
+
+        // let update_data = this.props.parcel_information.parcel_list.concat(data)
+        obj = {
+            parcel_information: {
+                is_ready: merge_parcel_info(update_data).is_ready,
+                panel_title: merge_parcel_info(update_data).title,
+                font_type: merge_parcel_info(update_data).font_type,
+                parcel_list: update_data
+            },
+        }
         this.props.set_form_info(obj)
     }
 
     remove_one_pack = (id_no) => {
+        this.close_service_panel()
         let update_data = this.props.parcel_information.parcel_list.filter(item => item.key != id_no)
-          // 删除一个包裹时 要去修改总标题
+        // 删除一个包裹时 要去修改总标题
         let obj = {
             'parcel_information': {
                 is_ready: merge_parcel_info(update_data).is_ready,
@@ -145,7 +186,7 @@ class Parcel extends React.Component {
             }
         }
         obj['service_information'] = {}
-        obj['service_information']['is_required_fetch'] = true   
+        obj['service_information']['is_required_fetch'] = true
         this.props.update_form_info(obj)
     }
 
@@ -164,16 +205,16 @@ class Parcel extends React.Component {
         }
         this.props.set_form_info(obj)
     }
-    
+
     shouldComponentUpdate(nextProps, nextState) {
         const current_form = this.props.parcel_information
         const next_form = nextProps.parcel_information
-        if(_.isEqual(current_form ,next_form)) return false
+        if (_.isEqual(current_form, next_form)) return false
         return true
     }
 
     render() {
-        // console.log('parcel_form form did render')
+        console.log('parcel_form form did render')
         return (
             <div>
                 {this.props.parcel_information.parcel_list.map((item, index) =>
@@ -213,7 +254,7 @@ function mapDispatchToProps(dispatch) {
     return {
         set_form_info: bindActionCreators(single_order_form.get_form_info, dispatch),
         update_form_info: bindActionCreators(single_order_form.update_form_info, dispatch),
-        
+
     }
 }
 

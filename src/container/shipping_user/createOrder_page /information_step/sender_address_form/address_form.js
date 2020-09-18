@@ -92,7 +92,7 @@ class SenderAddressForm extends React.Component {
 
 
     render() {
-        console.log('I did render from sender-address-form')
+        // console.log('I did render from sender-address-form')
         const current_form = this.formRef.current
         return (
             <Form

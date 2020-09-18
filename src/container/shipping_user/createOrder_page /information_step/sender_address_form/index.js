@@ -53,42 +53,41 @@ class Sender_Address_Form extends React.Component {
         let obj = {}
         obj[`${step}`] = data
         //如果输入完毕 检查无误，递交至redux,设置面板标题为输入完整地址，否则显示未完成
-        console.log('trriged by save')
-        // console.log('form is ready ' + is_ready_form(sender_content, this.props, form))
         let sadd_2 = data.sender_add2 ? " , " + data.sender_add2 + ' , ' : " , "
+        //表格输入改动，则关闭服务界面需要重新获取
+        let update_obj = {
+            'setting': {},
+            'billing_information': {
+                'on_display': false
+            }
+        }
+        update_obj['setting']['open_panel'] = this.props.setting.open_panel.filter(item => item != 'service_information')
         if (!is_ready_form(sender_content, this.props, form)) {
-            //信息处于未完成状态时 如果面板打开或者已经选择服务，就强制收起和修改
+            //表格处于未完成状态时 如果面板打开或者已经选择服 ，则修改状态
             if (this.props.setting.open_panel.includes('service_information') || this.props.service_information.service_name) {
-
-                let update_obj = { service_information: {}, setting: {} }
+                // let update_obj = { service_information: {}, setting: {} }
                 update_obj['service_information'] = {
                     is_select: false,
                     service_name: undefined,
                     panel_title: '请先完成输入信息',
                     font_type: 'secondary',
                 }
-
-                update_obj['setting']['open_panel'] = this.props.setting.open_panel.filter(item => item != 'service_information')
-                this.props.update_form_info(update_obj)
             }
             obj[`${step}`]['panel_title'] = '编辑中'
             obj[`${step}`]['font_type'] = 'warning'
         } else {
-            obj[`${step}`]['panel_title'] = data.sender_name + ' , ' + data.sender_add1 + sadd_2 + data.sender_city + ', ' + data.sender_state + ' ' + data.sender_zip_code
+            obj[`${step}`]['panel_title'] = data.sender_name + ' , ' + data.sender_add1 + sadd_2 + data.sender_city + ' , ' + data.sender_state + ' ' + data.sender_zip_code
             obj[`${step}`]['font_type'] = 'strong'
         }
+        this.props.update_form_info(update_obj)
+
+
         obj[`${step}`]['is_ready'] = is_ready_form(sender_content, this.props, form)
-        obj['service_information'] = {}
+        obj['service_information'] = this.props.service_information
         obj['service_information']['is_required_fetch'] = true
         this.props.get_form_info(obj)
     };
 
-    // shouldComponentUpdate(nextProps, nextState) {
-    //     const current_form = this.props.sender_information
-    //     const next_form = nextProps.sender_information
-    //     // if (_.isEqual(current_form, next_form)) return false
-    //     return true
-    // }
     onRef = (ref) => {
         this.child = ref
     }
@@ -96,26 +95,35 @@ class Sender_Address_Form extends React.Component {
     handlePlaceSelect() {
         const current_form = this.child.formRef.current
         let data = current_form.getFieldsValue()
-        // console.log(data)
         var address = this.autocomplete.getPlace().address_components
+        var address_name = this.autocomplete.getPlace().name
+        // var address_name = this.autocomplete.getPlace().name
         const getAddressComponent = (addressArray, type) => {
               return addressArray.find(item => _.isEqual(item.types, type))? addressArray.find(item => _.isEqual(item.types, type)).short_name : ''
         } 
-
+        const getState = getAddressComponent(address, ["country", "political"]) == 'US'? getAddressComponent(address, ["administrative_area_level_1", "political"]) :getAddressComponent(address, ["country", "political"])
         let udpateData = {
-            sender_add1: getAddressComponent(address, ['street_number']) + ' ' + getAddressComponent(address, ['route']),
+            // sender_add1: getAddressComponent(address, ['street_number']) + ' ' + getAddressComponent(address, ['route']),
+            sender_add1: address_name,
             sender_city: getAddressComponent(address, ["locality", "political"]),
-            sender_state: getAddressComponent(address, ["administrative_area_level_1", "political"]),
+            sender_state: getState,
             sender_zip_code: getAddressComponent(address, ["postal_code"]),
         }
-  
+        // console.log({...data, ...udpateData })
         current_form.setFieldsValue({...data, ...udpateData })
         this.save_data(current_form, { ...data, ...udpateData }, this.props.profile)
     }
 
+    // shouldComponentUpdate(nextProps, nextState) {
+    //     const current_form = this.props.sender_information
+    //     const next_form = nextProps.sender_information
+    //     if (_.isEqual(current_form, next_form)) return false
+    //     return true
+    // }
+
     componentDidMount() {
         this.autocomplete = new google.maps.places.Autocomplete(document.getElementById('sender_add1'),  {})
-        this.autocomplete.setFields(['address_components' ,'name']);
+        this.autocomplete.setFields(['address_components' ,'name', 'formatted_address']);
         this.autocomplete.addListener("place_changed", () => this.handlePlaceSelect())
     }
 
