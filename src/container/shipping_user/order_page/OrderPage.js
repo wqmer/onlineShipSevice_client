@@ -20,20 +20,10 @@ import { actions } from '../../../reducers/order'
 // import { shipping_user_actions } from '../../../reducers/shipping_platform/user'
 import { actions as actions_user_order } from '../../../reducers/shipping_platform/user/order'
 
-// import MyTable from './table'
-// import Filter from './filter'
 
-// import MyTable from '../../../components/Table'
 import mapNameToComponent from '../../../components'
 import Description from '../../../components/Description'
 import order_page_asset from '../../../asset/order_page'
-
-import { Skeleton } from 'antd';
-
-import AssignmentTurnedInOutlinedIcon from '@material-ui/icons/AssignmentTurnedInOutlined';
-import EditOutlinedIcon from '@material-ui/icons/EditOutlined';
-import IconButton from '@material-ui/core/IconButton';
-import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
 import NotFound from '../../../components/notFound'
 
 
@@ -43,45 +33,7 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 const InputGroup = Input.Group;
 
-const width_colum = {
-    long: 200,
-    medium: 150,
-    short: 150
-}
 
-function callback(key) {
-    console.log(key);
-}
-
-const pages_layout = [
-    {
-        'name': 'draft',
-        'column': [],
-        'filter': [],
-        'button': {
-            'action': ['submit', 'delete'],
-            'batch': ['批量递交', '批量删除']
-        }
-    },
-    {
-        'name': 'ready_to_ship',
-        'column': [],
-        'filter': [],
-        'button': {
-            'action': ['create', 'cancel'],
-            'batch': ['批量出单', '批量撤销']
-        }
-    },
-    {
-        'name': 'completed',
-        'column': [],
-        'filter': [],
-        'button': {
-            'action': ['print', 'export'],
-            'batch': ['批量打印', '批量导出']
-        }
-    }
-]
 const children = [];
 for (let i = 10; i < 36; i++) {
     children.push(<Option key={i.toString(36) + i}>{i.toString(36) + i}</Option>);
@@ -123,11 +75,9 @@ class order extends Component {
 
     render() {
         const { url } = this.props.match;
-        let order_id = undefined
         // console.log(url)
         // console.log(this.props.refs)
         return (
-
             <Switch>
                 {order_page_asset(this).map(item =>
                     <Route exact key={item.router} path={`${url}/${item.router}`}

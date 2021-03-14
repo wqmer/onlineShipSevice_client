@@ -1,4 +1,5 @@
 import { Form, Icon as LegacyIcon } from '@ant-design/compatible';
+
 import { ReloadOutlined } from '@ant-design/icons';
 import '@ant-design/compatible/assets/index.css';
 import {
@@ -29,6 +30,7 @@ import Chip from '@material-ui/core/Chip';
 import CloseIcon from '@material-ui/icons/Close';
 import CloseRoundedIcon from '@material-ui/icons/CloseRounded';
 import moment from 'moment';
+import { CloseOutlined, CloseCircleOutlined, CloseCircleFilled, StarFilled, StarTwoTone } from '@ant-design/icons';
 
 const InputGroup = Input.Group;
 const { Text } = Typography;
@@ -52,7 +54,7 @@ for (let i = 10; i < 36; i++) {
     children.push(<Option key={i.toString(36) + i}>{i.toString(36) + i}</Option>);
 }
 
-const chip_style = { padding: '6px' }
+const chip_style = { padding: '6px', }
 
 const fitler_content = (page_name, component) => {
     const filter_name = {
@@ -223,18 +225,25 @@ class Filter extends Component {
                     <RangePicker
                         {...filter_obj.poperty}
                         ranges={{
-                            Today: [moment(), moment()],
+                            Today: [moment().startOf('day'), moment().endOf('day')],
                             'This Month': [moment().startOf('month'), moment().endOf('month')],
                         }}
                         style={{ width: "100%" }}
-                        // size='small'
-                        format="YYYY-MM-DD"
+                        size='middle'
+                        format="YYYY-MM-DD HH:mm:ss"
                         // onChange={(value, dateString) => component.filter_onChange({ value, dateString }, 'data_picker')}
                         onChange={(value, dateString) => {
+                            // console.log(value[0])
                             let start_data = value ? value[0] : null
                             let end_data = value ? value[1] : null
                             let filter_type = value ? 'add' : 'clear'
-                            this.props.handle_filter(filter_obj.api_request_payload(start_data, end_data), filter_obj.tag, filter_type)
+
+                            // console.log(dateString)
+
+                            // let request_start_data = start_data.format('YYYY-MM-DD HH:mm:ss')
+                            // let request_end_data  = end_data.format('YYYY-MM-DD HH:mm:ss')
+
+                            this.props.handle_filter(filter_obj.api_request_payload(dateString[0], dateString[1]), filter_obj.tag, filter_type)
                             this.setState({ 'range_picker': { ...this.state.range_picker, value: [start_data, end_data] } })
                         }}
                         value={this.state['range_picker'].value}
@@ -243,6 +252,7 @@ class Filter extends Component {
             case "select_tag":
                 return (
                     <Select
+                        size='middle'
                         {...filter_obj.poperty}
                         // bordered={false}
                         mode="tags"
@@ -257,6 +267,7 @@ class Filter extends Component {
                 return (
                     // <TextArea style={{ width: "90%" }}   placeholder="textarea with clear icon" allowClear  />
                     <Search
+                        size='middle'
                         {...filter_obj.poperty}
                         style={{ width: "100%" }}
                         onSearch={value => console.log(value)} enterButton
@@ -297,34 +308,16 @@ class Filter extends Component {
                             this.props.handle_clear_search()
                         }}
                     />)
-            case filter_tag_name:
-                return (
-                    <Chip
-                        deleteIcon={<CloseRoundedIcon />}
-                        style={chip_style}
-                        label={filter_tag_name}
-                        // color="primary"
-                        variant="outlined"
-                        size='small'
-                        onDelete={(e) => {
-                            let obj = this.props.filter_content.find(item => item.tag == filter_tag_name)
-                            this.props.handle_filter(obj.api_request_payload(), obj.tag, 'clear')
-                            let state = {}
-                            state[obj.component] = { ...this.state[obj.component], value: obj.value }
-                            this.setState({ ...state })
-                            // this.handle_tag_close(filter_tag_name)
-                        }}
-                    />);
-
             // case filter_tag_name:
             //     return (
-            //         <Tag
-            //             style={chip_style}                  
+            //         <Chip
+            //             deleteIcon={<CloseRoundedIcon />}
+            //             style={chip_style}
+            //             label={filter_tag_name}
             //             // color="primary"
-            //             // variant="outlined"
-            //             // size='small'
-            //             closable
-            //             onClose={(e) => {
+            //             variant="outlined"
+            //             size='small'
+            //             onDelete={(e) => {
             //                 let obj = this.props.filter_content.find(item => item.tag == filter_tag_name)
             //                 this.props.handle_filter(obj.api_request_payload(), obj.tag, 'clear')
             //                 let state = {}
@@ -332,11 +325,33 @@ class Filter extends Component {
             //                 this.setState({ ...state })
             //                 // this.handle_tag_close(filter_tag_name)
             //             }}
-            //         >
-            //             {filter_tag_name}
+            //         />);
 
-            //         </Tag>
-            //     );
+            case filter_tag_name:
+                return (
+                    <Tag
+                        style={{ transform: 'scale(1.10)' }}
+                        // style={{ height: 'auto', width: '110%' }}
+                        // color="primary"
+                        // variant="outlined"
+                        // color="#f50"
+                        color='#f0f0f0'
+                        // size='middle'
+                        closeIcon={<CloseCircleFilled />}
+                        closable
+                        onClose={(e) => {
+                            let obj = this.props.filter_content.find(item => item.tag == filter_tag_name)
+                            this.props.handle_filter(obj.api_request_payload(), obj.tag, 'clear')
+                            let state = {}
+                            state[obj.component] = { ...this.state[obj.component], value: obj.value }
+                            this.setState({ ...state })
+                            // this.handle_tag_close(filter_tag_name)
+                        }}
+                    >
+                        <Text>{filter_tag_name}</Text>
+
+                    </Tag>
+                );
 
             default:
                 return null
@@ -354,7 +369,7 @@ class Filter extends Component {
                 <Row key={i} gutter={24} hidden={!this.state.display_more && i > 0} style={{ marginTop: i > 0 ? "16px" : "0px" }}>
                     <Col span={2}> <span style={{ fontSize: '15px', fontWeight: 600 }}> {i == 0 ? '筛选：' : undefined}</span>  </Col>
                     {filter.map((item, index) => { if ((Math.floor(index / break_point)) == i) return (<Col key={index} span={6} >{this.filter(item)}</Col>) })}
-                    {i == 0 ? <Col hidden={row > 1 ? false : true} style={{ textAlign: 'right', paddingTop: 6 }} span={3} > <a onClick={() => this.handle_more()} > {this.state.description} <LegacyIcon type={this.state.icon_type} /></a></Col> : undefined}
+                    {i == 0 ? <Col hidden={row > 1 ? false : true} style={{ textAlign: 'right', paddingTop: 6 }} span={3} > <a style={{ fontSize: '13px' }} onClick={() => this.handle_more()} > {this.state.description} <LegacyIcon type={this.state.icon_type} /></a></Col> : undefined}
                     {/* {i == 0 ? <Col span={3} style={{ textAlign: 'right', paddingTop: 6 }} ><a>高级查询 》</a></Col> : undefined } */}
                 </Row>
             result.push(element)
@@ -389,11 +404,11 @@ class Filter extends Component {
     render() {
 
         return (
-            <div style={{boxShadow: 'rgb(217, 217, 217) 1px 1px 7px 0px',  padding : "32px 32px 16px 32px", background: '#fff' }} hidden={this.props.filter_content.length == 0} >
+            <div style={{ boxShadow: 'rgb(217, 217, 217) 1px 1px 7px 0px', padding: "24px 32px 16px 32px", background: '#fff' }} hidden={this.props.filter_content.length == 0} >
                 {/* filter 显示区域 */}
                 {this.show_filter(this.props.filter_content)}
 
-                <Divider style={{ marginTop: "24px", marginBottom: "16px" }} dashed />
+                <Divider style={{ marginTop: "16px", marginBottom: "8px" }} dashed />
 
                 {/* filter tag 显示区域*/}
                 <Row hidden={this.props.filter_tags.length == 1 && this.props.filter_tags[0] == "is_all"} gutter={25} type="flex">

@@ -28,8 +28,8 @@ let config = {
         // 'Accept': 'application/json, text/plain',
         'Content-Type': 'application/json'
     },
-    timeout: 20000,
-    responseType: 'json'
+    timeout: 60000,
+    responseType: 'json',
 };
 
 axios.interceptors.response.use(function (res) {
@@ -51,21 +51,28 @@ axios.interceptors.response.use(function (res) {
 //   })
 
 
-export function get(url) {
-    return axios.get(url, config)
+export function get(url, cancel_token = undefined) {
+    return axios.get(url, { ...config, ...cancel_token })
 }
 
 export function post(url, data) {
     return axios.post(url, data, config)
 }
 
-export function remove(url, data) {
+export function remove(url,) {
     return axios.delete(url, config)
 }
 
 export function patch(url, data) {
     return axios.patch(url, data, config)
 }
+
+export function put(url, data) {
+    return axios.put(url, data, config)
+}
+// export function SourceCancel() {
+//     return axiosCancelSource.cancel()
+// }
 
 // export function PromisePost(url, data) {
 //     return Promise.resolve( axios.post(url, data, config) )

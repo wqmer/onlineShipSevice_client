@@ -14,18 +14,21 @@ import {
     Skeleton,
     Tooltip
 } from 'antd';
+import { Space, } from 'antd';
 import React, { Component, PropTypes } from 'react'
 import { Ref } from 'semantic-ui-react';
+import { MinusCircleTwoTone, EyeTwoTone, PrinterTwoTone, EyeOutlined, MinusCircleOutlined, PrinterOutlined, EyeFilled, PrinterFilled, MinusCircleFilled } from '@ant-design/icons';
 
+<MinusCircleTwoTone />
 
 const width_colum = {
     longest: 300,
-    long: 175,
+    long: 225,
     medium: 150,
     short: 125
 }
 
-const alignProp = 'left'
+const alignProp = 'center'
 
 const mapRouterToComponent = (Ref) =>
 
@@ -281,6 +284,23 @@ const mapRouterToComponent = (Ref) =>
                     'row_key': 'order_id',
                     'table_content': [
                         {
+                            title: '操作', key: 'action', width: width_colum.short, align: 'center',
+                            fixed: 'left',
+                            render: (text, record) => (
+                                <span>
+                                    <a type="defa" onClick={() => {
+                                        Ref.props.history.push({ pathname: `/forwarder/order/draft/detail/${record.order_id}`, order: record, order_id: record.order_id })
+                                    }
+
+                                    }>查看</a>
+                                    {/* <Divider type="vertical" />
+                            <a type="defa" >编辑</a>
+                            <Divider type="vertical" />
+                            <a type="defa" onClick={() => this.child.handle_action(record.order_id, 'cancel')} >撤销</a> */}
+                                </span>
+                            )
+                        },
+                        {
                             title: '参考订单号', width: width_colum.long, dataIndex: 'customer_order_id', key: 'customer_order_id',
                             align: alignProp,
                             ellipsis: {
@@ -336,23 +356,7 @@ const mapRouterToComponent = (Ref) =>
                                 </Tooltip>
                             ),
                         },
-                        {
-                            title: '操作', key: 'action', width: width_colum.short, align: 'center',
-                            fixed: 'right',
-                            render: (text, record) => (
-                                <span>
-                                    <a type="defa" onClick={() => {
-                                        Ref.props.history.push({ pathname: `/forwarder/order/draft/detail/${record.order_id}`, order: record, order_id: record.order_id })
-                                    }
 
-                                    }>查看</a>
-                                    {/* <Divider type="vertical" />
-                            <a type="defa" >编辑</a>
-                            <Divider type="vertical" />
-                            <a type="defa" onClick={() => this.child.handle_action(record.order_id, 'cancel')} >撤销</a> */}
-                                </span>
-                            )
-                        }
                     ],
                     "page_name": "ready_to_ship",
                     'filter_content': [
@@ -404,30 +408,59 @@ const mapRouterToComponent = (Ref) =>
                     'api_url': {
                         "get_data_pignate": '/user/get_orders'
                     },
+                    'style': { "size": "middle", "button_position": 'right', },
                     'row_key': 'order_id',
                     'table_content': [
                         {
-                            title: '参考订单号', width: width_colum.longest, dataIndex: 'customer_order_id', key: 'customer_order_id',
-                            align: alignProp,
+                            title: '操作', key: 'action', width: width_colum.short, align: alignProp,
+                            fixed: 'left',
+                            render: (text, record) => (
+                                <Space size ='middle'>
+                                    <a type="defa" onClick={() => console.log(record)} ><EyeFilled style={{ fontSize: '18px', }} /> </a>
+                                    <a type="defa" onClick={() => console.log(123)}><PrinterFilled style={{ fontSize: '16px', }} /></a>
+                                    <a type="defa" onClick={() => console.log(123)}> <MinusCircleFilled style={{ fontSize: '16px', }} /></a>
+                                </Space>
+                            )
+                        },
+                        // {
+                        //     title: '参考订单号', width: width_colum.longest, dataIndex: 'customer_order_id', key: 'customer_order_id',
+                        //     align: alignProp,
+                        //     ellipsis: {
+                        //         showTitle: false,
+                        //     },
+                        //     render: orderId => (
+                        //         <Tooltip placement="topLeft" title={orderId}>
+                        //             {orderId}
+                        //         </Tooltip>
+                        //     ),
+                        // },
+                        {
+                            title: '运单号', width: width_colum.long, dataIndex: ['parcel', 'parcelList'], key: 'parcel',
+                            align: 'center',
+                            fixed: 'left',
                             ellipsis: {
                                 showTitle: false,
                             },
-                            render: orderId => (
-                                <Tooltip placement="topLeft" title={orderId}>
-                                    {orderId}
+                            render: parcelList => (
+                                <Tooltip placement="topLeft" title={parcelList[0].tracking_numbers[0]}>
+                                    {parcelList[0].tracking_numbers[0]}
                                 </Tooltip>
                             ),
                         },
-                        { title: '渠道', width: width_colum.medium, dataIndex: 'carrier', align: alignProp, key: 'carrier', },
-                        { title: '运费金额', width: width_colum.medium, dataIndex: ['postage', 'estimate_amount'], align: alignProp, key: 'estimate_amount', },
-                        { title: '用户名', width: width_colum.medium, dataIndex: ['user', 'user_name'], align: alignProp, key: 'user_name', },
+                        { title: '渠道', width: width_colum.medium, dataIndex: ['service', 'asset', 'name'], align: 'center', key: 'service_name', },
                         {
-                            title: '尺寸', width: width_colum.medium,
-                            dataIndex: 'Reference2',
-                            align: alignProp,
-                            key: 'Reference2',
-                            render: (text, row) => { return (row.parcel.length + ' x ' + row.parcel.width + ' x ' + row.parcel.height) }
+                            title: '运费金额', width: width_colum.short, dataIndex: ['postage', 'billing_amount', 'total'], align: 'center', key: 'billing_amount_total',
+                            render: amount => '$ ' + amount
                         },
+
+                        // { title: '用户名', width: width_colum.medium, dataIndex: ['user', 'user_name'], align: alignProp, key: 'user_name', },
+                        // {
+                        //     title: '尺寸', width: width_colum.medium,
+                        //     dataIndex: 'Reference2',
+                        //     align: alignProp,
+                        //     key: 'Reference2',
+                        //     render: (text, row) => { return (row.parcel.length + ' x ' + row.parcel.width + ' x ' + row.parcel.height) }
+                        // },
                         { title: '重量lb', dataIndex: ['parcel', 'weight'], width: width_colum.short, align: alignProp, key: 'Weight', },
 
                         { title: '收货州', width: width_colum.short, dataIndex: ['recipient', 'state'], align: alignProp, key: 'recipient_state', },
@@ -447,35 +480,19 @@ const mapRouterToComponent = (Ref) =>
                         // { title: '收件人', width: width_colum.short, dataIndex: ['recipient', 'recipient_name'], align: alignProp, key: 'Name' },
 
 
-                        { title: '创建时间', width: width_colum.medium, dataIndex: 'created_at', align: alignProp, key: 'created_at', },
-                        {
-                            title: '系统订单号', width: width_colum.long, dataIndex: 'order_id', align: alignProp, key: 'order_id',
-                            ellipsis: {
-                                showTitle: false,
-                            },
-                            render: orderId => (
-                                <Tooltip placement="topLeft" title={orderId}>
-                                    {orderId}
-                                </Tooltip>
-                            ),
-                        },
-                        {
-                            title: '操作', key: 'action', width: width_colum.short, align: 'center',
-                            fixed: 'right',
-                            render: (text, record) => (
-                                <span>
-                                    <a type="defa" onClick={() => {
-                                        Ref.props.history.push({ pathname: `/forwarder/order/draft/detail/${record.order_id}`, order: record, order_id: record.order_id })
-                                    }
+                        { title: '创建时间', width: width_colum.long, dataIndex: 'created_at', align: alignProp, key: 'created_at', },
+                        // {
+                        //     title: '系统订单号', width: width_colum.long, dataIndex: 'order_id', align: alignProp, key: 'order_id',
+                        //     ellipsis: {
+                        //         showTitle: false,
+                        //     },
+                        //     render: orderId => (
+                        //         <Tooltip placement="topLeft" title={orderId}>
+                        //             {orderId}
+                        //         </Tooltip>
+                        //     ),
+                        // },
 
-                                    }>查看</a>
-                                    {/* <Divider type="vertical" />
-                            <a type="defa" >编辑</a>
-                            <Divider type="vertical" />
-                            <a type="defa" onClick={() => this.child.handle_action(record.order_id, 'cancel')} >撤销</a> */}
-                                </span>
-                            )
-                        }
                     ],
                     "page_name": "completed",
                     'filter_content': [
@@ -511,10 +528,12 @@ const mapRouterToComponent = (Ref) =>
                         // { component: 'select_tag', tag: '发货渠道', poperty: { placeholder: "选择渠道，可多选" } },
                         // { component: 'select_tag', tag: '渠道', poperty : { placeholder: '' } }
                     ],
-                    // 'button': {
-                    //     'action': ['submit', 'delete'],
-                    //     'batch': ['批量递交', '批量删除']
-                    // }
+                    "search_bar": false,
+                    'alert': true,
+                    'buttons': [
+                        { "key": "print", 'content': '打印', "type": "primary", "icon": undefined ,"isBatchAction" :true},
+                        { "key": "delete", 'content': '退单', "type": "danger", "icon": undefined ,"isBatchAction" :true}
+                    ]
                 }
             }
         },

@@ -166,8 +166,9 @@ export function* user_auth() {
                     data: response.data
                 })
             }
-            console.log( 'user auth response ' + response)
+            console.log( 'user auth response ' + JSON.stringify(response.data))
         } catch (err) {
+            console.log(err)
             yield put({
                 type: user_account_action.RESPONSE_USER_INFO,
                 data: {}

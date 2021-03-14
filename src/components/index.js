@@ -2,7 +2,7 @@ import Table from "./Table"
 import ProcessingPage from './ProcessingPage'
 import React, { Component, PropTypes } from 'react'
 
-const componentMapName = (name, props) => {
+const componentMapName = (name, props = undefined) => {
     switch (name) {
         case "table":
             return (<Table {...props} />)

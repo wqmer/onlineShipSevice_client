@@ -1,8 +1,7 @@
 import { Space, Avatar, Menu, Dropdown, } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import React, { Component, PropTypes, useState } from 'react'
-
-
+import { Link, } from 'react-router-dom';
 
 const menu = (props) => {
     return (
@@ -15,9 +14,10 @@ const menu = (props) => {
                 </a>
             </Menu.Item>
             <Menu.Item key="1">
-                <a target="_blank" rel="noopener noreferrer" href="http://www.taobao.com/">
+                <Link to={`/user/setting/address`}><span>账户信息</span></Link>
+                {/* <a target="_blank" rel="noopener noreferrer" href="http://www.taobao.com/">
                     账户信息
-                </a>
+                </a> */}
             </Menu.Item>
             <Menu.Divider />
             <Menu.Item key="3" disabled>

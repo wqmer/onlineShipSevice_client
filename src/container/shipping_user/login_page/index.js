@@ -2,7 +2,7 @@ import React, { Component, PropTypes } from 'react'
 import { connect } from 'react-redux'
 import { Switch, Route } from 'react-router-dom'
 import { bindActionCreators } from 'redux'
-import { Popconfirm, message } from 'antd';
+import { Spin, Popconfirm, message } from 'antd';
 import Login from "../../../components/Login/loginForm";
 import { Logined } from "../../../components/Logined";
 import { actions as user_account_actions } from '../../../reducers/shipping_platform/user'
@@ -12,12 +12,15 @@ class UserLogin extends Component {
         super(props);
     }
     render() {
-        const { login, register } = this.props;
+        const { login, register, isFetching } = this.props;
+        console.log('is fecthing ? ' + isFetching)
         return (
             <div className='login'>
-                {this.props.user_info.user_id ? <Logined history={this.props.history} user_info={this.props.user_info} />
-                    : <Login login={(data) => login(data)}
-                    />}
+                <Spin size="large" spinning ={isFetching}>
+                    {this.props.user_info.user_id ? <Logined history={this.props.history} user_info={this.props.user_info} />
+                        : <Login login={(data) => login(data)}
+                        />}
+                </Spin>
             </div>
         )
     }
@@ -29,6 +32,7 @@ class UserLogin extends Component {
 function mapStateToProps(state) {
     return {
         status_code: state.globalState.status_code,
+        isFetching: state.globalState.isFetching,
         user_info: state.shipping_platform_user.account.user_info
     }
 }

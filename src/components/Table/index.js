@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import _ from 'lodash';
+
 import ReactDOM from 'react-dom';
 import QueueAnim from 'rc-queue-anim';
 import 'antd/dist/antd.css';
@@ -39,6 +40,8 @@ import Filter from './filter'
 import { handle_error } from '../../util/error'
 import format from '../../util/format'
 import { SearchOutlined } from '@ant-design/icons';
+import ModalAddressForm from '../ModalAddAddress';
+// import ModalAddressForm from '../ModalAddAddress';
 import Pusher from 'pusher-js';
 
 
@@ -141,7 +144,7 @@ class MyTable extends React.Component {
     state = {
         status: this.props.page_name,
         total: 0,
-        page_size: 10,
+        page_size: 20,
         current_page: 1,
         searching_string: undefined,
         filter: {},
@@ -317,13 +320,14 @@ class MyTable extends React.Component {
         return (
             <div style={{ display: 'flex', justifyContent: 'space-between' }} >
                 <span>{message}<span> 一共 {this.state.total} </span> 记录。已经勾选 <a style={{ marginLeft: '5px', marginRight: '5px' }} >{this.state.selectedRowKeys.length}</a>项  {this.state.selectedRowKeys.length == 0 ? <span></span> : <a onClick={this.handleCleanCheck} style={{ marginLeft: '30px' }}>取消选择</a>} </span>
+                {/* <span>已勾选 <a style={{ marginLeft: '5px', marginRight: '5px' }} >{this.state.selectedRowKeys.length}</a>项  {this.state.selectedRowKeys.length == 0 ? <span></span> : <a onClick={this.handleCleanCheck} style={{ marginLeft: '30px' }}>取消选择</a>} </span> */}
             </div>
         )
     }
 
     componentDidMount = () => {
         window.scrollTo(0, 0)
-        this.props.onRef(this)
+        if (this.props.onRef) this.props.onRef(this)
         this.fetch_data(this.props.api_url['get_data_pignate'])
     }
 
@@ -354,11 +358,12 @@ class MyTable extends React.Component {
             indicator: <Spin size='large' />,
         }
         const paginationProps = {
+            // position:['topLeft'],
             total: this.state.total,
             pageSize: this.state.page_size,
             current: this.state.current_page,
             showSizeChanger: true,
-            pageSizeOptions: ['10', '25', '50', '100']
+            pageSizeOptions: ['20', '50', '100', '200']
         }
 
         const rowSelection = {
@@ -373,21 +378,37 @@ class MyTable extends React.Component {
             }],
         };
 
+        const ButtonGroup = () => {
+            return (
+                <div>
+                    <Button disabled={this.state.selectedRowKeys.length == 0} onClick={() => this.handleCheck(this.props.layout_button.action[0])} type="primary" icon={<UploadOutlined />} style={{ marginBottom: '10px' }} >{this.props.layout_button.batch[0]}</Button>
+                    <Button disabled={this.state.selectedRowKeys.length == 0} onClick={() => this.handleCheck(this.props.layout_button.action[1])} type="danger" icon={<DeleteOutlined />} style={{ marginBottom: '10px', marginLeft: '10px' }} >{this.props.layout_button.batch[1]}</Button>
+                </div>
+            )
+        }
+
+
+
+
         return (
             <div>
-                <Filter
-                    filter_content={this.props.filter_content}
-                    onRef={this.onRef}
-                    page_name={this.props.page_name}
-                    filter_tags={this.state.filter_tags}
-                    handle_filter={(data, filter_tag, type) => this.handle_filter(data, filter_tag, type)}
-                    searching_string={this.state.searching_string}
-                    handle_clear_search={() => this.handle_clear_search()}
-                    show_reset={!this.state.filter_tags.includes('is_all')}
-                    reset_all_filter={() => this.reset_all_filter()}
-                />
+                {this.props.filter_content ?
+                    <div style={{ marginBottom: '16px' }} >
+                        <Filter
+                            filter_content={this.props.filter_content}
+                            onRef={this.onRef}
+                            page_name={this.props.page_name}
+                            filter_tags={this.state.filter_tags}
+                            handle_filter={(data, filter_tag, type) => this.handle_filter(data, filter_tag, type)}
+                            searching_string={this.state.searching_string}
+                            handle_clear_search={() => this.handle_clear_search()}
+                            show_reset={!this.state.filter_tags.includes('is_all')}
+                            reset_all_filter={() => this.reset_all_filter()}
+                        /> </div>
+                    : undefined}
 
-                <div style={{ boxShadow: 'rgb(217, 217, 217) 1px 1px 7px 0px', }}>
+
+                <div style={{ background: '#ffffff', boxShadow: 'rgb(217, 217, 217) 1px 1px 7px 0px' }}>
 
                     {/* <div style={{ marginBottom: '8px', textAlign: 'left', paddingRight : "48px"}}> */}
                     {/* <Button disabled={this.state.selectedRowKeys.length == 0} onClick={() => this.handleCheck(this.props.layout_button.action[0])} type="primary" icon={<UploadOutlined />} style={{ marginBottom: '10px' }} >{this.props.layout_button.batch[0]}</Button>
@@ -399,26 +420,60 @@ class MyTable extends React.Component {
                                 placeholder="搜索" />                   
                         </Space> */}
                     {/* </div> */}
-                    <div
-                        hidden={this.props.showAlert == undefined ? false : this.props.showAlert ? false : true}>
-                        <Alert
-                            style={{ marginTop: '16px' }}
-                            message={this.handle_message(this.state.searching_string)}
-                            type="info"
-                            showIcon
-                        />
-                    </div>
+
 
                     <Table
-                        style={{ marginTop: '16px' }}
-                        // size='middle'
+                        style={{}}
+                        size={this.props.style ? this.props.style.size : "middle"}
+                        title={
+                            !this.props.alert && !this.props.buttons ? undefined : () =>
+                                <div>
+                                    {/* <div></div> */}
+                                    <div style={{ textAlign: this.props.style ? this.props.style.button_position : 'right' }}>
+                                        <Space style={{ paddingLeft: 16, paddingTop: 4, paddingRight: 16, }}>
+                                            {this.props.buttons ? this.props.buttons.map(item =>
+                                                item.component
+                                                // <Button key={item.key} size='middle' disabled={item.isBatchAction == true && !this.state.selectedRowKeys.length > 0} type={item.type}>{item.content}</Button>
+                                            ) : undefined}
+                                        </Space>
+                                    </div>
+                                    <div
+                                        hidden={!this.props.alert}
+                                    // hidden={!this.state.selectedRowKeys.length > 0}
+                                    >
+                                        <Alert
+                                            style={{ marginTop: '16px' }}
+                                            message={this.handle_message(this.state.searching_string)}
+                                            type="info"
+                                        // banner
+                                        // showIcon
+                                        />
+                                    </div>
+                                </div >
+                        }
                         // tableLayout = 'fixed'
+                        expandable={{
+                            expandIconColumnIndex: 2,
+                            expandedRowRender: record => <p style={{ paddingLeft: 250 }}>test</p>,
+                            // expandedRowRender , 
+                            // rowExpandable: record => {return true },
+                            rowExpandable: record => { if (record.parcel) return record.parcel.parcelList.length > 1 },
+
+                            // expandIcon: ({ expanded, onExpand, record }) =>
+                            //     expanded ? (
+                            //         <span onClick={e => onExpand(record, e)} >o</span>
+                            //     ) : (
+                            //         <span onClick={e => onExpand(record, e)} >c</span>
+                            //         )
+
+                        }}
+
                         pagination={paginationProps}
                         rowKey={record => record[this.props.row_key]}
                         rowSelection={this.props.checkBox == undefined ? rowSelection : this.props.checkBox ? this.props.checkBox : undefined}
                         columns={this.props.table_content}
                         dataSource={this.state.data}
-                        scroll={{ x: this.props.table_content.map(item => item.width).reduce((accumulator, currentValue) => accumulator + currentValue) + 200, y: 480 }}
+                        scroll={{ x: this.props.table_content.map(item => item.width).reduce((accumulator, currentValue) => accumulator + currentValue) + 200, y: 516 }}
                         loading={tableLoading}
                         onChange={this.handle_table_change}
                     />

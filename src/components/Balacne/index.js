@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import { AccountBookOutlined, AccountBookTwoTone, AccountBookFilled } from '@ant-design/icons';
 import {
     Tabs,
     Divider,
@@ -23,19 +23,23 @@ import { Statistic, Card, Row, Col } from 'antd';
 const { Text, Link } = Typography;
 
 const Balance = (props) => {
-    // console.log(props)
-    const [value, setData] = useState(0);
 
+    const [value, setData] = useState(0);
     useEffect(() => {
-        const fetchData = async () => {
-            const result = await get('/user/userInfo',);
-            setData(result.data.balance);
-        };
-        fetchData();
+        // const fetchData = async () => {
+        //     console.log('request to data')
+        //     const result = await get('/user/userInfo',);
+        //     setData(result.data.balance);
+        // };
+        // fetchData();
+        setData(props.balance);
     });
 
     return (
         <Space style={{ marginRight: 24 }} size='middle'>
+           
+            {/* <a><AccountBookFilled onClick={() => console.log(123)} /></a> */}
+            {/* <a><AccountBookTwoTone onClick={() => console.log(123)} /> </a>   */}
             <Text type="secondary">余额:</Text>
             <Statistic
                 // key={item.title}
@@ -48,8 +52,12 @@ const Balance = (props) => {
                 prefix={'$ '}
             // suffix={<span>{item.unit}</span>}
             />
+             {/* <a><AccountBookOutlined /></a> */}
         </Space>
     )
 }
+
+
+
 
 export default Balance

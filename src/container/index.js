@@ -19,6 +19,7 @@ import { Router, Route, Switch, Link, NavLink } from 'react-router-dom';
 import createHistory from 'history/createBrowserHistory';
 import ComopnentLogin from './shipping_user/login_page';
 import Component_ship_user from './shipping_user/homePage';
+import Component_test_label from './shipping_user/components/shipping_label';
 import NotFound from '../components/notFound'
 import PrivateRoute from '../router/PrivateRoute';
 import { connect } from 'react-redux'
@@ -60,6 +61,7 @@ class AppIndex extends Component {
                         {/* <Route exact path="/" component={ComponentUser} /> */}
                         <Route exact path="/login" component={ComopnentLogin} />
                         <Route path="/user" component={Component_ship_user} />
+                        <Route path="/testLabel" component={Component_test_label} />
                         {/* <Route path="/seller" component={ComponentUser} />     */}
                         <Route component={NotFound} />
                         {/* <Route path="/test" component={testDashboard} /> */}
