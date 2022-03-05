@@ -26,9 +26,10 @@ let config = {
     headers: {
         // 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
         // 'Accept': 'application/json, text/plain',
+        'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
     },
-    timeout: 60000,
+    timeout: 100000,
     responseType: 'json',
 };
 
@@ -70,6 +71,8 @@ export function patch(url, data) {
 export function put(url, data) {
     return axios.put(url, data, config)
 }
+
+
 // export function SourceCancel() {
 //     return axiosCancelSource.cancel()
 // }

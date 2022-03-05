@@ -54,6 +54,7 @@ const initialState = {
 
   setting: {
     open_panel: [],
+    serviseOpenType :['UPS' ,'FEDEX']
   },
 };
 

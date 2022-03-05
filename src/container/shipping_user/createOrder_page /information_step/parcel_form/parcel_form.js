@@ -28,6 +28,8 @@ import ShortUniqueId from "short-unique-id";
 import IconButton from "@material-ui/core/IconButton";
 import DeleteOutlineOutlinedIcon from "@material-ui/icons/DeleteOutlineOutlined";
 import CropSquareOutlinedIcon from "@material-ui/icons/CropSquareOutlined";
+import DeleteForeverOutlinedIcon from "@material-ui/icons/DeleteForeverOutlined";
+import DeleteForeverIcon from "@material-ui/icons/DeleteForever";
 import {
   CaretRightOutlined,
   DoubleRightOutlined,
@@ -36,6 +38,7 @@ import {
 import { actions as single_order_form } from "../../../../../reducers/shipping_platform/single_order_form";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
+import { ItemMeta } from "semantic-ui-react";
 const uid = new ShortUniqueId();
 
 const { Panel } = Collapse;
@@ -80,17 +83,19 @@ const select_compoment = (props, item, parcel) => {
       break;
     case "numberInput":
       form_item_content = (
-        <InputNumber placeholder={item.placehold} style={{ width: "100%" }} />
+        <InputNumber
+          precision={item.precision}
+          min={item.min}
+          max={item.max}
+          placeholder={item.placehold}
+          style={{ width: "100%" }}
+        />
       );
       break;
     case "select":
       form_item_content = (
         <Select placeholder={item.placehold}>
           <Select.Option value="default_state1">1</Select.Option>
-          <Select.Option value="default_state2">2</Select.Option>
-          <Select.Option value="default_state3">3</Select.Option>
-          <Select.Option value="default_state3">4</Select.Option>
-          <Select.Option value="default_state3">5</Select.Option>
         </Select>
       );
       break;
@@ -116,11 +121,7 @@ const select_compoment = (props, item, parcel) => {
       // validateStatus="warning"
       // trigger ="onBlur"
       label={item.label}
-      rules={[
-        { required: item.is_required },
-        //todo 添加数据验证
-        // { type: "number", max: 20 }
-      ]}
+      rules={item.rule}
       initialValue={parcel ? parcel[item.key] : undefined}
       validateTrigger={["onBlur"]}
     >
@@ -235,7 +236,7 @@ class Parcel_component extends React.Component {
       this.props.content,
       this.formRef.current
     )
-      ? `重量 ：${parcel_data.pack_info.weight} ${this.props.unit_weight}，  尺寸 ： ${parcel_data.pack_info.length}  x  ${parcel_data.pack_info.width}  x  ${parcel_data.pack_info.height} ${this.props.unit_length}`
+      ? `重量 ${parcel_data.pack_info.weight} ${this.props.unit_weight}，  尺寸 ${parcel_data.pack_info.length}  x  ${parcel_data.pack_info.width}  x  ${parcel_data.pack_info.height} ${this.props.unit_length}`
       : "编辑中";
     parcel_data.font_type = is_ready_form(
       this.props.content,
@@ -243,7 +244,7 @@ class Parcel_component extends React.Component {
     )
       ? "strong"
       : "warning";
-    console.log(parcel_data);
+    // console.log(parcel_data);
     this.setState({ title: parcel_data.panel_title });
     this.props.submit_info(parcel_data);
   };
@@ -266,27 +267,25 @@ class Parcel_component extends React.Component {
     ) {
       console.log("unit is not changed");
     } else {
-      console.log(this.props.data);
-      this.formRef.current.setFieldsValue(this.props.data);
-      let {
-        weight,
-        length,
-        width,
-        height,
-      } = this.formRef.current.getFieldsValue();
+      // console.log(this.props.data);
+      // console.log(nextProps.data);
+      console.log("unit changed");
+      this.formRef.current.setFieldsValue(nextProps.data);
+      let { weight, length, width, height } =
+        this.formRef.current.getFieldsValue();
 
       let panel_title = is_ready_form(this.props.content, this.formRef.current)
-        ? `重量 ：${weight} ${nextProps.unit_weight}，  尺寸 ： ${length}  x  ${width}  x  ${height} ${nextProps.unit_length}`
+        ? `重量 ${parseFloat(weight).toFixed(2)} ${
+            nextProps.unit_weight
+          }，  尺寸 ${length}  x  ${width}  x  ${height} ${
+            nextProps.unit_length
+          }`
         : "编辑中";
       this.setState({ title: panel_title });
     }
   };
 
   reset = () => {
-    console.log("weizhishi " + this.props.position);
-
-    console.log(this.props.id_no);
-    console.log("wo bei chu fale ");
     this.formRef.current.setFieldsValue({
       same_pack: 1,
       weight: undefined,
@@ -294,7 +293,8 @@ class Parcel_component extends React.Component {
       width: undefined,
       height: undefined,
       order_id: undefined,
-      reference: undefined,
+      reference_1: undefined,
+      reference_2: undefined,
     });
     this.setState({ title: "未录入" });
   };
@@ -310,8 +310,14 @@ class Parcel_component extends React.Component {
       asset: this.props.content,
       onBlurToRedux: (data) => this.onBlurToRedux(data),
     };
+    const start_tag =
+      Math.ceil(this.props.tag_start) < 0
+        ? ""
+        : Math.ceil(this.props.tag_start);
+    const end_tag =
+      Math.ceil(this.props.tag_end) < 0 ? "" : Math.ceil(this.props.tag_end);
     return (
-      <div style={{ paddingLeft: 48, paddingRight: 48 }}>
+      <div style={{ paddingLeft: 0 }}>
         <Collapse
           key={this.props.id_no}
           style={{
@@ -337,39 +343,46 @@ class Parcel_component extends React.Component {
             style={{ background: "#f7f7f7", bordered: "0px" }}
             key={this.props.id_no}
             header={
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>
-                  <Text style={{ fontWeight: 500, marginTop: 2 }}>
-                    包裹{" "}
-                    {this.props.tag_start == this.props.tag_end
-                      ? this.props.tag_start
-                      : `${this.props.tag_start} - ${this.props.tag_end} `}{" "}
-                    -{" "}
-                  </Text>{" "}
-                  <Text
-                    style={{ fontSize: 11 }}
-                    type={this.props.font_type}
-                    strong
-                  >
-                    {" "}
-                    {/* {this.props.title} */}
-                    {this.state.title}
-                  </Text>
-                </span>
-                <IconButton
-                  hidden={this.props.id_no == "first_pak" ? true : false}
-                  size="small"
-                  aria-label="delete"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    this.props.remove(this.props.id_no);
-                  }}
+              <span style={{ width: "80%" }}>
+                <Text style={{ fontWeight: 500, marginTop: 2 }}>
+                  包裹{" "}
+                  {start_tag == end_tag
+                    ? start_tag
+                    : `${start_tag} 至 ${end_tag}  ` }{" "}
+                   {" "}
+                </Text>{" "}
+                <Text
+                  style={{ fontWeight: 500, fontSize: 11 , marginLeft:6}}
+                  type={this.props.font_type}
                 >
-                  <DeleteOutlineOutlinedIcon fontSize="small" />
-                </IconButton>
-              </div>
+                  {" "}
+                  {/* {this.props.title} */}
+                  {this.state.title}
+                </Text>
+              </span>
+            }
+            extra={
+              <IconButton
+                hidden={this.props.id_no == "first_pak" ? true : false}
+                size="small"
+                aria-label="delete"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  this.props.remove(this.props.id_no);
+                }}
+              >
+                <DeleteForeverIcon fontSize="small" color="error" />
+              </IconButton>
             }
           >
+            <Divider
+              hidden={!this.props.parcel.is_panel_opened}
+              dashed
+              style={{
+                marginTop: 0,
+                marginBottom: 1,
+              }}
+            />
             <div
               style={{ background: "#F8F8F8", padding: " 16px 32px 0px 32px" }}
             >

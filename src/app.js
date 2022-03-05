@@ -8,6 +8,7 @@ import configureStore from './configureStore';
 import './styles/styles.scss';
 
 
+
 const store = configureStore();
 
 ReactDOM.render( 

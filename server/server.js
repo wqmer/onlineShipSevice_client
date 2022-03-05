@@ -5,6 +5,7 @@ const httpProxy = require ('http-proxy')
 const connectHistoryApiFallback = require('connect-history-api-fallback')
 const config = require('../config/config')
 
+
 const publicPath = path.join(__dirname, '..', 'public');
 const app = express();
 const port = process.env.PORT || 3000;

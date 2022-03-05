@@ -45,6 +45,7 @@ const CollectionsPage = (props) => {
         //这里加入服务器的api请求处理，并异步处理返回，关闭对话框
         try {
             setLoading(true)
+            // console.log(values)
             let result = await post('/user/update_address', { _id: props.content._id, ...values })
             if (result.code == 0) {
                 setVisible(false)

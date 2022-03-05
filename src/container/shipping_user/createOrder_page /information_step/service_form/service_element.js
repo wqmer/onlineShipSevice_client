@@ -7,12 +7,16 @@ import {
   Tag,
   Button,
   Checkbox,
+  Row,
+  Col,
+  Space,
 } from "antd";
 import React, { Component } from "react";
 import { Redirect, Router, Route, Link, NavLink } from "react-router-dom";
 import ShortUniqueId from "short-unique-id";
 import IconButton from "@material-ui/core/IconButton";
 import DeleteOutlineOutlinedIcon from "@material-ui/icons/DeleteOutlineOutlined";
+import FreightIcon from "../../../../../components/CustomIcon/Freight";
 import {
   EditOutlined,
   EllipsisOutlined,
@@ -26,11 +30,13 @@ import {
   WarningOutlined,
   WarningTwoTone,
   CloseCircleTwoTone,
-  PhoneTwoTone
+  PhoneTwoTone,
 } from "@ant-design/icons";
+import Item from "antd/lib/list/Item";
+import AdminIcon from "../../../../../components/CustomIcon/AdminSmall";
 
 const origin_style = {
-  width: "92.5%",
+  width: "92%",
   border: "1px solid #d9d9d9",
   // boxShadow: "rgb(204, 204, 204) 0px 0px 9px",
 };
@@ -45,11 +51,11 @@ const statusMapAsset = (status, message) => {
     failed: {
       type: "danger",
       indicator: <CloseCircleTwoTone twoToneColor="#f5222d" />,
-      text: "发生错误 " + message,
+      text: message,
     },
     timeout: {
       type: "warning",
-      indicator: <ClockCircleTwoTone twoToneColor="#faad14"/>,
+      indicator: <ClockCircleTwoTone twoToneColor="#faad14" />,
       // indicator: <span><Button type="primary" shape="circle" icon={<ReloadOutlined />} /></span>,
       // indicator: <span style = {{fontsize : 24 ,color :'#1890ff'}}><ReloadOutlined /></span> ,
       text: (
@@ -66,7 +72,7 @@ const statusMapAsset = (status, message) => {
 
   return opition[`${status}`];
 };
-const { Text } = Typography;
+const { Text, Paragraph } = Typography;
 const uid = new ShortUniqueId();
 const { Meta } = Card;
 class My_service_card extends React.Component {
@@ -86,8 +92,12 @@ class My_service_card extends React.Component {
       zone,
       service_description,
       rate,
+      NegotiateTotal,
+      RateType,
       tag,
       messsage,
+      service_source,
+      agent,
     } = this.props.service;
     const description =
       zone == undefined
@@ -97,22 +107,17 @@ class My_service_card extends React.Component {
     return (
       <div>
         <Spin
-          style={{ width: "92.5%", textAlign: "center" }}
+          style={{ width: "92%", textAlign: "center" }}
           spinning={
             !this.props.isSuccess == "success" || this.props.isDisplayOnly
           }
-          indicator={
-            asset.indicator
-
-            // !this.props.isSuccess ? (
-            //   <CloseCircleTwoTone twoToneColor="#f5222d" />
-            // ) : (
-            //   <WarningTwoTone twoToneColor="#faad14" />
-            // )
-          }
+          indicator={asset.indicator}
           tip={
-            <Text
+            <Paragraph
               type={asset.type}
+              ellipsis={{
+                rows: 2,
+              }}
               style={{
                 fontSize: 12,
                 width: "100%",
@@ -120,7 +125,7 @@ class My_service_card extends React.Component {
               }}
             >
               {asset.text}
-            </Text>
+            </Paragraph>
           }
         >
           <Card
@@ -133,11 +138,6 @@ class My_service_card extends React.Component {
             onClick={() => this.props.select(code)}
             headStyle={{ background: "#F8F8F8", height: 36 }}
             hoverable={true}
-            // actions={[
-            //   <SettingOutlined key="setting" />,
-            //   <EditOutlined key="edit" />,
-            //   <EllipsisOutlined key="ellipsis" />,
-            // ]}
             size="small"
             style={
               this.props.check
@@ -152,21 +152,24 @@ class My_service_card extends React.Component {
             title={
               loading ? undefined : this.props.isSuccess == "success" ? (
                 <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
                 >
                   <span>
-                    <Text style={{ fontSize: 12 }} type="secondary">
-                      {" "}
-                      {description}{" "}
+                    <Text style={{ fontSize: 13 }} type="secondary">
+                      {description}
                     </Text>
                   </span>
-                  <span>
+                  <Space size={5} align="end">
+                    {RateType == "shipment" ? <FreightIcon /> : undefined}{" "}
                     <Text
                       style={{ fontSize: 18, fontWeight: 500, color: "black" }}
                     >
-                      $ {rate}
+                      $ {NegotiateTotal ? NegotiateTotal : rate}
                     </Text>
-                  </span>
+                  </Space>
                 </div>
               ) : (
                 "无法估价"
@@ -176,20 +179,40 @@ class My_service_card extends React.Component {
             <Meta
               title={
                 <span style={{ paddingLeft: "15%" }}>
-                  <Avatar shape="square" size={56} src={image_src} />
-                  <span style={{ fontSize: 16, marginLeft: 16 }}>
+                  <Avatar
+                    style={{ marginTop: 4 }}
+                    shape="square"
+                    size={56}
+                    src={image_src}
+                  />
+                  <span style={{ fontSize: 14, marginLeft: 16 }}>
                     {service_name}
                   </span>
                 </span>
               }
               description={
-                <div style={{ textAlign: "right" }}>
-                  {/* <span style={{ paddingLeft: 12 }}>{description}</span> */}
-                  <Checkbox
-                    style={{ paddingRight: 12 }}
-                    checked={this.props.check}
-                  />
-                </div>
+                <Row justify="space-between" align="middle">
+                  <Col style={{ fontSize: 9 }}>
+                    <Space>
+                      {agent == "Smartship" ? (
+                        <AdminIcon />
+                      ) : (
+                        <span>来源:</span>
+                      )}
+                      <span> {service_source} </span>
+                    </Space>
+                  </Col>
+                  <Col>
+                    <Checkbox
+                      style={{ fontSize: 12 }}
+                      checked={
+                        !this.props.isSuccess == "success"
+                          ? false
+                          : this.props.check
+                      }
+                    />
+                  </Col>
+                </Row>
               }
             />
           </Card>

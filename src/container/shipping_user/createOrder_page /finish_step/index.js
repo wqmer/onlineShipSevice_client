@@ -3,7 +3,7 @@ import {
   RollbackOutlined,
   SmileTwoTone,
 } from "@ant-design/icons";
-import { Result, Button, Space } from "antd";
+import { Result, Button, Space, Row, Col } from "antd";
 import React, { Component } from "react";
 import {
   Redirect,
@@ -94,61 +94,7 @@ for (let i = 0; i <= 2; i++) {
   );
   arrayLabel.push(label);
 }
-// const MyDocument = () => (
-//   <Document title="测试label" style={{ padding: 0 }}>
-//     <Page style={styles.body}>
-//       <Image
-//         key="23"
-//         // src="https://ship-service.s3-us-west-2.amazonaws.com/labels/2021-01-30/9205500000000000091566.png"
-//         // src="https://ship-service.s3-us-west-2.amazonaws.com/labels/2021-01-30/9205500000000000091566.png"
-//         src="/test.png"
-//       />
-//       {/* <Text
-//         style={styles.pageNumbers}
-//         render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
-//         fixed
-//       /> */}
-//     </Page>
-//   </Document>
-// );
-// class ComponentToPrint extends React.Component {
-//   render() {
-//     return (
-//       <PDFViewer width={500} height={750}>
-//         <MyDocument />
-//       </PDFViewer>
-//     );
-//   }
-// }
-// ReactPDF.render(<MyDocument />,document.getElementById('root'))
-// ReactDOM.render(<Trunk/>, document.getElementById('root'));
 
-// class ComponentToPrint extends React.Component {
-//   render() {
-//     return (
-//       <div>
-//         <PDFViewer >
-//           <Document
-//             // onRender={() => this.setState({ loading: false })}
-//             title="test"
-//             // style={{ padding: 0 }}
-//           >
-//             <Page
-//               // orientation = 'landscape'
-//               // wrap={false}
-//               // debug={true}
-//               // style={styles.page}
-//               // size={[400, 600]}
-//               // size="B6"
-//             >
-//               {arrayLabel.map((item) => item)}
-//             </Page>
-//           </Document>
-//         </PDFViewer>
-//       </div>
-//     );
-//   }
-// }
 class ComponentToPrint extends React.Component {
   constructor(props) {
     super(props);
@@ -194,10 +140,15 @@ class Finish_step extends React.Component {
     // const { url } = this.props.match;
     // console.log(this.props)
     return (
-      <div style={{ background: "#f0f5ff", marginTop: 32 }}>
-        <span
+      <Row
+        span={24}
+        justify="space-between"
+        style={{ background: "#f0f5ff", marginTop: 32, paddingLeft: 32 }}
+      >
+        <Col
+          span={12}
           style={{
-            width: "50%",
+            // width: "50%",
             display: "inline-block",
             textAlign: "left",
             verticalAlign: "top",
@@ -236,18 +187,33 @@ class Finish_step extends React.Component {
                 borderRadius: "3px",
                 boxShadow: "rgb(204, 204, 204) 0px 0px 10px",
               }}
+              // href = {`/user/create/single_order`}
+              type="primary"
+              // icon={<RollbackOutlined />}
+              onClick={() => {
+                this.setState({ resetType: "default" }, () => {
+                  this.props.reset();
+                });
+              }}
+              key="new"
+            >
+              新运单
+            </Button>
+            <Button
+              style={{
+                borderRadius: "3px",
+                boxShadow: "rgb(204, 204, 204) 0px 0px 10px",
+              }}
               type="primary"
               // icon={<RollbackOutlined />}
               onClick={() => {
                 this.setState({ resetType: "repeat" }, () => {
                   this.props.resetWithRepeat();
                 });
-
-                // this.props.reset();
               }}
               key="buy"
             >
-              出相同单
+              相同单
             </Button>
             {/* <Button
               style={{
@@ -299,32 +265,16 @@ class Finish_step extends React.Component {
               title="物流信息"
             />
           </div>
-        </span>
-        {/* <div style ={{display: 'inline-block' , height:400 ,width :600 }}></div> */}
-
-        {/* <ComponentToPrint  ref={el => (this.componentRef = el)}/>
-                <Result
-                    icon={<SmileTwoTone />}
-                    title="订单完成"
-                    subTitle={<span>系统订单号为xxxxxxxx，总运费为10.23 usd 。 由FedDex提供运输服务。点击按钮直接打印pdf 或在<a>已完成</a>中查看 </span>}
-                    extra={[
-   
-                    ]}
-                /> */}
-        {/* <div > <ComponentToPrint_alt ref={el => (this.componentRef = el)} /> </div> */}
-
-        {/* <PDFViewer ref={el => (this.componentRef = el)} width={400} height={600}>
-                    <MyDocument />
-                </PDFViewer> */}
-        <span style={{ width: "50%", display: "inline-block" }}>
+        </Col>
+        <Col span={12}>
           <LabelGallery
             setCurrentTrackingNumbers={(item) =>
               this.setState({ currentTrackingNumbers: item })
             }
             labels={this.props.labels}
           />
-        </span>
-      </div>
+        </Col>
+      </Row>
     );
   }
 }

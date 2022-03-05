@@ -4,11 +4,11 @@ const ExtractTextPlugin = require("extract-text-webpack-plugin");
 
 process.env.NODE_ENV = process.env.NODE_ENV || "development";
 
-if (process.env.NODE_ENV === "test") {
-  require("dotenv").config({ path: ".env.test" });
-} else if (process.env.NODE_ENV === "development") {
-  require("dotenv").config({ path: ".env.development" });
-}
+// if (process.env.NODE_ENV === "test") {
+//   require("dotenv").config({ path: ".env.test" });
+// } else if (process.env.NODE_ENV === "development") {
+//   require("dotenv").config({ path: ".env.development" });
+// }
 
 module.exports = (env) => {
   const isProduction = env === "production";
@@ -78,14 +78,16 @@ module.exports = (env) => {
     plugins: [CSSExtract],
     devtool: isProduction ? "source-map" : "inline-source-map",
     devServer: {
-      port: 8082,
+      port: 8085,
       contentBase: path.join(__dirname, "public"),
       historyApiFallback: true,
       publicPath: "/dist/",
       proxy: {
         "/api": {
-          //  target: 'https://kimmy-webapp-api-server.herokuapp.com',
-          target: "http://[::1]:8000",
+          target:
+            "http://smartshipwebapi-env.eba-mevsg3bu.us-west-2.elasticbeanstalk.com/",
+            // 'https://smartship-web-api.herokuapp.com/',
+            // "http://[::1]:8000",
           pathRewrite: { "^/api": "" },
           changeOrigin: true,
           secure: false,

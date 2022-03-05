@@ -84,14 +84,16 @@ class CustomSider extends Component {
       <div>
         <Sider
           style={{
-            // overflow: 'auto',
+            // overflow: 'hidden',
             height: "100vh",
-            // position: 'fixed',
+                //  height: "100%",
+            position: 'fixed',
             // borderColor: '#ddd',
             // boxShadow: "rgb(204, 204, 204) 0px 0px 10px",
-            zIndex:9,
-            boxShadow: '1px 1px 5px rgba(0,21,41,.1)',
-            // left: 0,
+            zIndex: 1000,
+            boxShadow: "1px 1px 5px rgba(0,21,41,.1)",
+            overflow: 'auto',
+            left: 0,
           }}
           // onBreakpoint={broken => {
           //     console.log(broken);
@@ -100,11 +102,12 @@ class CustomSider extends Component {
           // collapsedWidth= {0}
           theme="dark"
           // trigger={customTrigger}
-          // onCollapse={this.onCollapse}
+
           // collapsedWidth = {100}
-          trigger={null}
+          // trigger
           // collapsible
-          collapsed={this.state.collapsed}
+          // collapsed={this.state.collapsed}
+          // onCollapse={this.onCollapse}
           width={siderWidth}
         >
           <div

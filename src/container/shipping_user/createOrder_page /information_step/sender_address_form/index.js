@@ -20,6 +20,7 @@ import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 import _ from "lodash";
 import { get, post } from "../../../../../util/fetch";
+import { get_google_address } from "../../../../../util/address";
 import Address_form from "./address_form";
 import PlacesAutocomplete from "react-places-autocomplete";
 import {
@@ -41,6 +42,7 @@ const sender_content = {
       placehold: "发件人姓名，暂时不支持中文",
       span_value: 8,
       type: "input",
+      rule: [{ required: true }, { whitespace: false }, { max: 35 }],
     },
     {
       label: "电话",
@@ -50,6 +52,16 @@ const sender_content = {
       placehold: "美国电话,必填",
       span_value: 8,
       type: "input",
+      // help: "Phone Number is not valid",
+      rule: [
+        { required: true },
+        {
+          pattern:
+            // /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im,
+            /^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/,
+          message: "Phone Number is not valid",
+        },
+      ],
     },
     {
       label: "公司名字",
@@ -59,6 +71,7 @@ const sender_content = {
       placehold: "公司名字，选填",
       span_value: 8,
       type: "input",
+      rule: [{ required: false }, { max: 25 }],
     },
 
     // { "label": '邮件地址', "key": "sender_email", "is_required": false, "message": undefined, "placehold": 'Email地址, 选填', "span_value": 12, type: 'input', },
@@ -70,6 +83,7 @@ const sender_content = {
       placehold: "街道号码，路名，必填项",
       span_value: 24,
       type: "input",
+      rule: [{ required: true }, { max: 35 }],
     },
     {
       label: "门牌号码",
@@ -79,6 +93,7 @@ const sender_content = {
       placehold: "门牌号，选填",
       span_value: 8,
       type: "input",
+      rule: [{ max: 15 }],
     },
     {
       label: "邮编",
@@ -88,6 +103,7 @@ const sender_content = {
       placehold: "必填项",
       span_value: 6,
       type: "input",
+      rule: [{ required: true }, { pattern: /(^\d{5}$)|(^\d{5}-\d{4}$)/ }],
     },
     {
       label: "城市",
@@ -97,6 +113,7 @@ const sender_content = {
       placehold: "必填项",
       span_value: 6,
       type: "input",
+      rule: [{ required: true }, { type: "string" }],
     },
     {
       label: "州",
@@ -106,6 +123,7 @@ const sender_content = {
       placehold: "选择州",
       span_value: 4,
       type: "select",
+      rule: [{ required: true }, { type: "string" }],
     },
   ],
 
@@ -176,6 +194,7 @@ class Sender_Address_Form extends React.Component {
   constructor(props) {
     super(props);
     this.autocomplete = null;
+    // this.child = React.createRef();
   }
 
   state = {
@@ -216,11 +235,10 @@ class Sender_Address_Form extends React.Component {
         },
       };
       // reset service and payment panel
-      update_obj["setting"][
-        "open_panel"
-      ] = this.props.setting.open_panel.filter(
-        (item) => item != "service_information"
-      );
+      update_obj["setting"]["open_panel"] =
+        this.props.setting.open_panel.filter(
+          (item) => item != "service_information"
+        );
       update_obj["setting"]["open_panel"] = update_obj["setting"][
         "open_panel"
       ].filter((item) => item != "payment_information");
@@ -262,7 +280,6 @@ class Sender_Address_Form extends React.Component {
     );
 
     if (
-      this.state.label != "手动输入" ||
       this.props.sender_information["is_ready"] != obj[`${step}`]["is_ready"] ||
       type == "google"
     ) {
@@ -272,10 +289,13 @@ class Sender_Address_Form extends React.Component {
     }
   };
 
-  onBlurToRedux = (data, step) => {
+  onBlurToRedux = (data, step, key) => {
     let obj = {};
     const current_form = this.child.formRef.current;
     obj[`${step}`] = { ...this.props.sender_information, ...data };
+    let is_unit_changed =
+      current_form.getFieldValue(key) != this.props.sender_information[key];
+
     obj[`${step}`]["panel_title"] = !is_ready_form(
       sender_content,
       this.props,
@@ -291,6 +311,20 @@ class Sender_Address_Form extends React.Component {
     )
       ? "warning"
       : "strong";
+
+    obj[`${step}`]["is_ready"] = is_ready_form(
+      sender_content,
+      this.props,
+      current_form
+    );
+
+    if (is_unit_changed) {
+      this.setState({ value: "new_address", label: "手动输入" });
+      obj[`${step}`]["nickname"] = "手动输入";
+      obj[`${step}`]["_id"] = "new_address";
+    }
+
+    console.log("onblur works" + JSON.stringify(obj));
     this.props.get_form_info(obj);
   };
 
@@ -300,41 +334,35 @@ class Sender_Address_Form extends React.Component {
 
   formSetFieldVaule(data) {
     const current_form = this.child.formRef.current;
+    // console.log(this.child.current)
+    // const current_form =  this.child.current.formRef.current
     current_form.setFieldsValue(data);
   }
 
   handlePlaceSelect() {
     const current_form = this.child.formRef.current;
     let data = current_form.getFieldsValue();
-    var address = this.autocomplete.getPlace().address_components;
-    var address_name = this.autocomplete.getPlace().name;
-    // var address_name = this.autocomplete.getPlace().name
-    const getAddressComponent = (addressArray, type) => {
-      return addressArray.find((item) => _.isEqual(item.types, type))
-        ? addressArray.find((item) => _.isEqual(item.types, type)).short_name
-        : "";
-    };
-    const getState =
-      getAddressComponent(address, ["country", "political"]) == "US"
-        ? getAddressComponent(address, [
-            "administrative_area_level_1",
-            "political",
-          ])
-        : getAddressComponent(address, ["country", "political"]);
+    let address_obj = this.autocomplete.getPlace();
+    let { add1, city, state, zip_code } = get_google_address(address_obj);
 
     let udpateData = {
-      // sender_add1: getAddressComponent(address, ['street_number']) + ' ' + getAddressComponent(address, ['route']),
-      sender_add1: address_name,
-      sender_city: getAddressComponent(address, ["locality", "political"])
-        ? getAddressComponent(address, ["locality", "political"])
-        : getAddressComponent(address, [
-            "sublocality_level_1",
-            "sublocality",
-            "political",
-          ]),
-      sender_state: getState,
-      sender_zip_code: getAddressComponent(address, ["postal_code"]),
+      sender_add1: add1,
+      sender_city: city,
+      sender_state: state,
+      sender_zip_code: zip_code,
     };
+
+    current_form.setFieldsValue({ ...data, ...udpateData });
+
+    this.save_data(
+      current_form,
+      { ...data, ...udpateData },
+      this.props.profile,
+      "google"
+    );
+
+    this.setState({ isPick: true });
+
     // console.log({...data, ...udpateData })
     current_form.setFieldsValue({ ...data, ...udpateData });
     this.save_data(
@@ -427,7 +455,7 @@ class Sender_Address_Form extends React.Component {
     this.rest_sev_pay_form();
     this.setState({ value: selectValue, label });
     current_form.setFieldsValue({ ...obj.sender_information });
-    message.success("收件信息已自动填充");
+    message.success({ content: "自动填充", key: "sender", duration: 0.5 });
     this.props.update_form_info(obj);
   };
 
@@ -438,6 +466,7 @@ class Sender_Address_Form extends React.Component {
     ismessageOn = true,
     reduxOn = true
   ) => {
+    this.rest_sev_pay_form();
     const current_form = this.child.formRef.current;
     let obj = { sender_information: undefined };
     obj["sender_information"] = {
@@ -457,13 +486,13 @@ class Sender_Address_Form extends React.Component {
     };
     this.setState({ open: false, value, label });
     current_form.setFieldsValue({ ...obj.sender_information });
-    if (ismessageOn) message.warning("发件信息已重置");
+    if (ismessageOn)
+      message.warning({ content: "已重置", key: "sender", duration: 0.5 });
     if (reduxOn) this.props.update_form_info(obj);
   };
 
   //解决导致有label 的value值，在undefined情况下， 无法出现placeholder
   getSelectValue = () => {
- 
     let value = this.state.value
       ? this.state.value
       : this.props.sender_information._id
@@ -474,12 +503,12 @@ class Sender_Address_Form extends React.Component {
       : this.props.sender_information.nickname
       ? this.props.sender_information.nickname
       : undefined;
-      if (value != undefined && label === undefined) return {
+    if (value != undefined && label === undefined)
+      return {
         value,
-        label :'未命名地址',
+        label: "未命名地址",
       };
-      if (value === undefined && label === undefined) return undefined;
-
+    if (value === undefined && label === undefined) return undefined;
 
     return {
       value,
@@ -617,7 +646,10 @@ class Sender_Address_Form extends React.Component {
 
         <Address_form
           onRef={this.onRef}
-          onBlurToRedux={(data, step) => this.onBlurToRedux(data, step)}
+          // ref={this.child}
+          onBlurToRedux={(data, step, key) =>
+            this.onBlurToRedux(data, step, key)
+          }
           content={sender_content}
           sender_information={this.props.sender_information}
           onChange={(form, data) =>

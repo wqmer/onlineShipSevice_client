@@ -12,6 +12,7 @@ import {
   Steps,
   Divider,
   message,
+  Radio,
 } from "antd";
 import React, { Component } from "react";
 import { actions as single_order_form } from "../../../../../reducers/shipping_platform/single_order_form";
@@ -21,6 +22,7 @@ import _ from "lodash";
 import Address_form from "./address_form";
 import { readExcel } from "../../../../../util/sheet";
 import { get, post } from "../../../../../util/fetch";
+import { get_google_address } from "../../../../../util/address";
 import {
   PlusOutlined,
   HomeFilled,
@@ -28,6 +30,7 @@ import {
   PrinterFilled,
   DeleteFilled,
 } from "@ant-design/icons";
+import { ItemMeta } from "semantic-ui-react";
 const { Text } = Typography;
 
 const receipant_content = {
@@ -40,6 +43,7 @@ const receipant_content = {
       placehold: "发件人姓名，暂时不支持中文",
       span_value: 8,
       type: "input",
+      rule: [{ required: true }, { whitespace: false }, { max: 35 }],
     },
     {
       label: "电话",
@@ -49,6 +53,15 @@ const receipant_content = {
       placehold: "美国电话,必填",
       span_value: 8,
       type: "input",
+      rule: [
+        { required: true },
+        {
+          pattern:
+            // /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im,
+            /^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/,
+          message: "Phone Number is not valid",
+        },
+      ],
     },
     {
       label: "公司名字",
@@ -58,6 +71,7 @@ const receipant_content = {
       placehold: "公司名字，选填",
       span_value: 8,
       type: "input",
+      rule: [{ required: false }, { max: 25 }],
     },
 
     // { "label": '邮件地址', "key": "receipant_email", "is_required": false, "message": undefined, "placehold": 'Email地址,选填', "span_value": 12, type: 'input', },
@@ -69,6 +83,7 @@ const receipant_content = {
       placehold: "街道号码，路名，必填项",
       span_value: 24,
       type: "input",
+      rule: [{ required: true }, { max: 35 }],
     },
     {
       label: "门牌号",
@@ -78,6 +93,7 @@ const receipant_content = {
       placehold: "门牌号，选填",
       span_value: 8,
       type: "input",
+      rule: [ { max: 15 }],
     },
     {
       label: "邮编",
@@ -87,6 +103,7 @@ const receipant_content = {
       placehold: "必填项",
       span_value: 6,
       type: "input",
+      rule: [{ required: true }, { pattern: /(^\d{5}$)|(^\d{5}-\d{4}$)/ }],
     },
     {
       label: "城市",
@@ -96,6 +113,7 @@ const receipant_content = {
       placehold: "必填项",
       span_value: 6,
       type: "input",
+      rule: [{ required: true }, { type: "string" }],
     },
     {
       label: "州",
@@ -105,6 +123,7 @@ const receipant_content = {
       placehold: "选择州",
       span_value: 4,
       type: "select",
+      rule: [{ required: true }, { type: "string" }],
     },
   ],
 
@@ -183,6 +202,14 @@ class Receipant_Address_Form extends React.Component {
     label: undefined,
     FBAlocation: [],
     data: [],
+    typeOfAddress: "auto",
+    firstAllTouched: true,
+    firstPick: true,
+    isPick: false,
+  };
+
+  onRef = (ref) => {
+    this.child = ref;
   };
 
   rest_sev_pay_form = () => {
@@ -215,11 +242,10 @@ class Receipant_Address_Form extends React.Component {
         },
       };
       // reset service and payment panel
-      update_obj["setting"][
-        "open_panel"
-      ] = this.props.setting.open_panel.filter(
-        (item) => item != "service_information"
-      );
+      update_obj["setting"]["open_panel"] =
+        this.props.setting.open_panel.filter(
+          (item) => item != "service_information"
+        );
       update_obj["setting"]["open_panel"] = update_obj["setting"][
         "open_panel"
       ].filter((item) => item != "payment_information");
@@ -228,7 +254,7 @@ class Receipant_Address_Form extends React.Component {
   };
 
   //on_change
-  save_data = (form, data, step, type) => {
+  save_data = (form, data, step, type, changedFields) => {
     //只要编辑, 更改选择器状态 ,重置服务，重置付款步骤
     this.rest_sev_pay_form();
     // console.log('I am typing')
@@ -238,6 +264,29 @@ class Receipant_Address_Form extends React.Component {
     obj[`${step}`] = data;
     obj[`${step}`]["nickname"] = "手动输入";
     obj[`${step}`]["_id"] = "new_address";
+
+    //console.log(changedFields)
+    //更改字段时rest 地址属性tag
+    if (type != "google") {
+      let restTag = () => {
+        this.setState({
+          typeOfAddress: "auto",
+        });
+        let obj = { receipant_information: this.props.receipant_information };
+        obj.receipant_information.receipant_is_residential = undefined;
+        this.props.update_form_info(obj);
+      };
+      this.props.receipant_information[changedFields[0].name[0]] !=
+        changedFields[0].value &&
+      [
+        "receipant_add1",
+        "receipant_zip_code",
+        "receipant_city",
+        "receipant_state",
+      ].includes(changedFields[0].name[0])
+        ? restTag()
+        : undefined;
+    }
 
     //信息处于未完成状态时 如果面板打开或者已经选择服务，就强制收起和修改
     // 考虑 google place 插件 使用
@@ -260,23 +309,59 @@ class Receipant_Address_Form extends React.Component {
       this.props,
       form
     );
+    // this.setState({ value: "new_address", label: "手动输入" });
+
+    // this.props.get_form_info(obj);
 
     if (
-      this.state.label != "手动输入" ||
+      // this.state.label != "手动输入" ||
       this.props.receipant_information["is_ready"] !=
         obj[`${step}`]["is_ready"] ||
       type == "google"
     ) {
       if (this.state.label != "手动输入")
         this.setState({ value: "new_address", label: "手动输入" });
+
       this.props.get_form_info(obj);
     }
   };
 
+  validateAddress = async (address) => {
+    let isRes;
+    let obj = { receipant_information: this.props.receipant_information };
+
+    try {
+      obj.receipant_information.receipant_is_residential = "validaing";
+      this.props.update_form_info(obj);
+      let result = await post("/user/address_validate", address);
+
+      console.log(result);
+
+      if (result.code == 0) {
+        isRes = result.data.rdi == "R" ? true : false;
+      } else {
+        isRes = "invalid";
+      }
+      obj.receipant_information.receipant_is_residential = isRes;
+      this.props.update_form_info(obj);
+    } catch (error) {
+      isRes = "invalid";
+      obj.receipant_information.receipant_is_residential = isRes;
+      this.props.update_form_info(obj);
+    } finally {
+      // obj.receipant_information.receipant_is_residential = invalid;
+      // this.props.update_form_info(obj);
+      // this.setState({
+      //   typeOfAddress: isRes == "invalid" ? "auto" : isRes,
+      // });
+    }
+  };
   //防止不改变状态的输入无法保存
-  onBlurToRedux = (data, step) => {
+  onBlurToRedux = async (data, step, key) => {
     let obj = {};
     const current_form = this.child.formRef.current;
+    let is_required_validate =
+      current_form.getFieldValue(key) != this.props.receipant_information[key];
     obj[`${step}`] = { ...this.props.receipant_information, ...data };
     obj[`${step}`]["panel_title"] = !is_ready_form(
       receipant_content,
@@ -293,51 +378,86 @@ class Receipant_Address_Form extends React.Component {
     )
       ? "warning"
       : "strong";
+
+    obj[`${step}`]["is_ready"] = is_ready_form(
+      receipant_content,
+      this.props,
+      current_form
+    );
+
+    if (is_required_validate) {
+      this.setState({ value: "new_address", label: "手动输入" });
+      obj[`${step}`]["nickname"] = "手动输入";
+      obj[`${step}`]["_id"] = "new_address";
+    }
+
+    // obj[`${step}`]["receipant_is_residential"] = isRes;
     this.props.get_form_info(obj);
-  };
 
-  // shouldComponentUpdate(nextProps, nextState) {
-  //     const current_form = this.props.receipant_information
-  //     const next_form = nextProps.receipant_information
-  //     if(_.isEqual(current_form ,next_form)) return false
-  //     return true
-  // }
+    // console.log("key + " + key);
 
-  onRef = (ref) => {
-    this.child = ref;
+    // console.log('current blur is ' + is_ready_form(receipant_content, this.props, current_form))
+
+    // console.log( obj[`${step}`]["panel_title"])
+
+    let isAllTouched = current_form.isFieldsTouched(
+      receipant_content.asset
+        .filter((item) => item.is_required == true)
+        .map((item) => item.key),
+      true
+    );
+
+    // console.log("current pick status " + this.state.isPick);
+
+    if (
+      (is_ready_form(receipant_content, this.props, current_form) ||
+        (this.state.firstAllTouched && isAllTouched)) &&
+      key != "receipant_add1" &&
+      is_required_validate
+    ) {
+      let request_body = {
+        company_name: "",
+        line1: current_form.getFieldValue("receipant_add1"),
+        line2: this.props.receipant_information["receipant_add2"],
+        line3: "",
+        city: this.props.receipant_information["receipant_city"],
+        state_province: this.props.receipant_information["receipant_state"],
+        postal_code: this.props.receipant_information["receipant_zip_code"],
+        country_code: "US",
+      };
+      // console.log("request body form BLUR" + JSON.stringify(request_body));
+      this.setState({ firstAllTouched: false });
+      setTimeout(() => this.validateAddress(request_body), 100);
+    }
+
+    //只要 地址一，邮编，城市，州和redux中存的不一样且是is_ready_form，且地址类型是自动的时候就去调用 地址验证
+    // console.log(
+    //   current_form.getFieldValue("receipant_add1") ==
+    //     this.props.receipant_information["receipant_add1"]
+    // );
+    // await this.validateAddress();
   };
 
   handlePlaceSelect() {
     const current_form = this.child.formRef.current;
-    let data = current_form.getFieldsValue();
-    var address = this.autocomplete.getPlace().address_components;
-    var address_name = this.autocomplete.getPlace().name;
 
-    const getAddressComponent = (addressArray, type) => {
-      return addressArray.find((item) => _.isEqual(item.types, type))
-        ? addressArray.find((item) => _.isEqual(item.types, type)).short_name
-        : "";
-    };
-    console.log(address);
-    const getState =
-      getAddressComponent(address, ["country", "political"]) == "US"
-        ? getAddressComponent(address, [
-            "administrative_area_level_1",
-            "political",
-          ])
-        : getAddressComponent(address, ["country", "political"]);
+    let data = current_form.getFieldsValue();
+
+    let isAllTouched = current_form.isFieldsTouched(
+      receipant_content.asset
+        .filter((item) => item.is_required == true)
+        .map((item) => item.key),
+      true
+    );
+    let address_obj = this.autocomplete.getPlace();
+    let { add1, city, state, zip_code } = get_google_address(address_obj);
     let udpateData = {
-      receipant_add1: address_name,
-      receipant_city: getAddressComponent(address, ["locality", "political"])
-        ? getAddressComponent(address, ["locality", "political"])
-        : getAddressComponent(address, [
-            "sublocality_level_1",
-            "sublocality",
-            "political",
-          ]),
-      receipant_state: getState,
-      receipant_zip_code: getAddressComponent(address, ["postal_code"]),
+      receipant_add1: add1,
+      receipant_city: city,
+      receipant_state: state,
+      receipant_zip_code: zip_code,
     };
+
     current_form.setFieldsValue({ ...data, ...udpateData });
     this.save_data(
       current_form,
@@ -345,17 +465,20 @@ class Receipant_Address_Form extends React.Component {
       this.props.profile,
       "google"
     );
-  }
 
-  fetchFBAAddress = async () => {
-    try {
-      this.setState({ isFetching: true });
-      let result = await post("/user/get_address", { type: "receipant" });
-      return result;
-    } catch (error) {
-      throw error;
-    }
-  };
+    let request_body = {
+      company_name: "",
+      line1: add1,
+      line2: "",
+      line3: "",
+      city: city,
+      state_province: state,
+      postal_code: zip_code,
+      country_code: "US",
+    };
+    this.setState({ isPick: true });
+    setTimeout(() => this.validateAddress(request_body), 200);
+  }
 
   handleChange = (value) => {
     const current_form = this.child.formRef.current;
@@ -443,10 +566,33 @@ class Receipant_Address_Form extends React.Component {
       receipant_state,
     };
     this.rest_sev_pay_form();
-    this.setState({ value: selectValue, label });
+    this.setState({ value: selectValue, label, typeOfAddress: "auto" });
     current_form.setFieldsValue({ ...obj.receipant_information });
-    message.success("收件信息已自动填充");
+    message.success({ content: "自动填充", key: "receipant", duration: 0.5 });
     this.props.update_form_info(obj);
+
+    let request_body = {
+      company_name: "",
+      line1: receipant_add1,
+      line2: receipant_add2,
+      line3: "",
+      city: receipant_city,
+      state_province: receipant_state,
+      postal_code: receipant_zip_code,
+      country_code: "US",
+    };
+
+    setTimeout(() => this.validateAddress(request_body), 200);
+  };
+
+  fetchFBAAddress = async () => {
+    try {
+      this.setState({ isFetching: true });
+      let result = await post("/user/get_address", { type: "receipant" });
+      return result;
+    } catch (error) {
+      throw error;
+    }
   };
 
   reset_address_form = (
@@ -456,6 +602,7 @@ class Receipant_Address_Form extends React.Component {
     ismessageOn = true,
     reduxOn = true
   ) => {
+    this.rest_sev_pay_form();
     const current_form = this.child.formRef.current;
     let obj = { receipant_information: undefined };
     obj["receipant_information"] = {
@@ -473,9 +620,17 @@ class Receipant_Address_Form extends React.Component {
       receipant_city: undefined,
       receipant_state: undefined,
     };
-    this.setState({ open: false, value, label });
+    this.setState({
+      open: false,
+      value,
+      label,
+      firstPick: true,
+      firstAllTouched: true,
+      isPick: false,
+    });
     current_form.setFieldsValue({ ...obj.receipant_information });
-    if (ismessageOn) message.warning("收件信息已重置");
+    if (ismessageOn)
+      message.warning({ content: "已重置", key: "receipant", duration: 0.5 });
     if (reduxOn) this.props.update_form_info(obj);
   };
   //解决导致有label 的value值，在undefined情况下， 无法出现placeholder
@@ -498,6 +653,43 @@ class Receipant_Address_Form extends React.Component {
     };
   };
 
+  onChangeAdressType = (e) => {
+    this.rest_sev_pay_form();
+    this.setState({
+      typeOfAddress: e.target.value,
+    });
+    let obj = { receipant_information: this.props.receipant_information };
+    obj.receipant_information.receipant_is_residential = e.target.value;
+    let {
+      is_ready,
+      receipant_name,
+      receipant_phone_number,
+      receipant_company,
+      receipant_add1,
+      receipant_add2,
+      receipant_zip_code,
+      receipant_city,
+      receipant_state,
+    } = obj["receipant_information"];
+    if (e.target.value == "auto" && is_ready) {
+      let request_body = {
+        company_name: "",
+        line1: receipant_add1,
+        line2: receipant_add2,
+        line3: "",
+        city: receipant_city,
+        state_province: receipant_state,
+        postal_code: receipant_zip_code,
+        country_code: "US",
+      };
+      this.validateAddress(request_body);
+    } else {
+      this.props.update_form_info(obj);
+    }
+
+    // console.log("radio1 checked", e.target.value);
+  };
+
   componentDidMount() {
     this.props.onRef(this);
     this.autocomplete = new google.maps.places.Autocomplete(
@@ -510,8 +702,15 @@ class Receipant_Address_Form extends React.Component {
     );
   }
 
+  // shouldComponentUpdate(nextProps, nextState) {
+  //     const current_form = this.props.receipant_information
+  //     const next_form = nextProps.receipant_information
+  //     if(_.isEqual(current_form ,next_form)) return false
+  //     return true
+  // }
+
   render() {
-    // console.log('receipant_address form did render')
+    // console.log(this.props.receipant_information);
     return (
       <div
         style={{
@@ -522,7 +721,7 @@ class Receipant_Address_Form extends React.Component {
           marginRight: 48,
         }}
       >
-        <Row gutter={24}>
+        <Row gutter={24} align="middle">
           <Col span={8}>
             <Select
               // defaultValue={this.props.sender_information.nickname ? this.props.sender_information.nickname : undefined}
@@ -539,7 +738,7 @@ class Receipant_Address_Form extends React.Component {
                 this.state.isFetching ? <Spin size="small" /> : null
               }
               onChange={this.handleChange}
-              style={{ marginBottom: 18, width: "100%" }}
+              style={{ marginBottom: 24, width: "100%" }}
               onDropdownVisibleChange={async (open) => {
                 let current = this.state.open;
                 try {
@@ -619,14 +818,44 @@ class Receipant_Address_Form extends React.Component {
               </Select.OptGroup>
             </Select>
           </Col>
+
+          <Col span={8}>
+            类型：
+            <Radio.Group
+              options={[
+                { label: "自动", value: "auto" },
+                { label: "住宅", value: true },
+                { label: "商业", value: false },
+              ]}
+              style={{ marginBottom: 24 }}
+              onChange={this.onChangeAdressType}
+              // value={
+              //   this.props.receipant_information.receipant_is_residential ===
+              //     true ||
+              //   this.props.receipant_information.receipant_is_residential ===
+              //     false
+              //     ? this.props.receipant_information.receipant_is_residential
+              //     : "auto"
+              // }
+              value={this.state.typeOfAddress}
+            />
+          </Col>
         </Row>
         <Address_form
-          onBlurToRedux={(data, step) => this.onBlurToRedux(data, step)}
+          onBlurToRedux={(data, step, key) =>
+            this.onBlurToRedux(data, step, key)
+          }
           onRef={this.onRef}
           content={receipant_content}
           receipant_information={this.props.receipant_information}
-          onChange={(form, data) =>
-            this.save_data(form, data, this.props.profile)
+          onChange={(form, data, changedFields) =>
+            this.save_data(
+              form,
+              data,
+              this.props.profile,
+              "normal",
+              changedFields
+            )
           }
           // onChangeValue={(data) => this.onChangeValue(data)}
         />

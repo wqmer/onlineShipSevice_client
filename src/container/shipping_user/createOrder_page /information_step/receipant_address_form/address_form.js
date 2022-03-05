@@ -42,9 +42,9 @@ const nameMapCompoment = (props, item) => {
     case "select":
       form_item_content = (
         <Select placeholder={item.placehold}>
-          <Select.Option value="default_state1">州一</Select.Option>
-          <Select.Option value="default_state2">州二</Select.Option>
-          <Select.Option value="default_state3">州三</Select.Option>
+          <Select.Option value="default_state1">test mode</Select.Option>
+          {/* <Select.Option value="default_state2">州二</Select.Option>
+          <Select.Option value="default_state3">州三</Select.Option> */}
         </Select>
       );
       break;
@@ -56,15 +56,11 @@ const nameMapCompoment = (props, item) => {
       onBlur={(e) => {
         let obj = {};
         obj[`${item.key}`] = e.target.value;
-        props.onBlurToRedux(obj, "receipant_information");
+        props.onBlurToRedux(obj, "receipant_information" , item.key);
       }}
       name={item.key}
       label={item.label}
-      rules={[
-        { required: item.is_required },
-        { whitespace: true },
-        { max: 35 },
-      ]}
+      rules={item.rule}
       initialValue={
         props.receipant_information
           ? props.receipant_information[item.key]
@@ -137,7 +133,7 @@ class ReceipantAddressForm extends React.Component {
   // }
 
   render() {
-    console.log("I did render from receipant-address-form");
+    // console.log("I did render from receipant-address-form");
     const current_form = this.formRef.current;
     return (
       <Form
@@ -146,7 +142,8 @@ class ReceipantAddressForm extends React.Component {
         onFieldsChange={(changedFields, allFields) => {
           this.props.onChange(
             this.formRef.current,
-            this.formRef.current.getFieldsValue()
+            this.formRef.current.getFieldsValue(),
+            changedFields
           );
         }}
         // onValuesChange={(changedFields, allFields) => {

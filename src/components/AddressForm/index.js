@@ -7,8 +7,8 @@ const content = {
     asset: [
         { "label": '公司名字', "key": "company", "is_required": false, "message": undefined, "placehold": '公司名字，选填', "span_value": 16, type: 'input', },
         { "label": '备注名', "key": "nickname", "is_required": false, "message": undefined, "placehold": '备注名', "span_value": 8, type: 'input', },
-        { "label": '姓', "key": "first_name", "is_required": true, "message": undefined, "placehold": '发件人姓，暂时不支持中文', "span_value": 8, type: 'input', },
-        { "label": '名', "key": "last_name", "is_required": true, "message": undefined, "placehold": '发件人名，暂时不支持中文', "span_value": 8, type: 'input', },
+        { "label": '姓', "key": "first_name", "is_required": true, "message": undefined, "placehold": '发件人 Frist Name', "span_value": 8, type: 'input', },
+        { "label": '名', "key": "last_name", "is_required": false, "message": undefined, "placehold": '发件人 Last Name', "span_value": 8, type: 'input', },
         { "label": '电话', "key": "phone_number", "is_required": true, "message": undefined, "placehold": '美国电话,必填', "span_value": 8, type: 'input', },
         // { "label": '邮件地址', "key": "sender_email", "is_required": false, "message": undefined, "placehold": 'Email地址, 选填', "span_value": 12, type: 'input', },
         { "label": '地址', "key": "address_one", "is_required": true, "message": undefined, "placehold": '街道号码，路名，必填项', "span_value": 24, type: 'input', },

@@ -1,4 +1,8 @@
-import Icon, { MoneyCollectTwoTone, UpOutlined } from "@ant-design/icons";
+import Icon, {
+  MoneyCollectTwoTone,
+  UpOutlined,
+  FileTextTwoTone,
+} from "@ant-design/icons";
 import {
   Space,
   message,
@@ -13,6 +17,9 @@ import {
   Divider,
   Col,
   Row,
+  List,
+  Popover,
+  Spin,
 } from "antd";
 import React, { Component } from "react";
 import {
@@ -31,13 +38,18 @@ import Information from "./information_step";
 import Finish from "./finish_step";
 import LocalAtmOutlinedIcon from "@material-ui/icons/LocalAtmOutlined";
 import { get, post } from "../../../util/fetch";
+import {
+  handle_surcharge,
+  handle_total_charge,
+  handle_ups_extra_surcharge,
+} from "../../../util/carrier";
 import { actions as single_order_form } from "../../../reducers/shipping_platform/single_order_form";
 import { actions as user_account_actions } from "../../../reducers/shipping_platform/user";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 
 const { Panel } = Collapse;
-const { Text } = Typography;
+const { Text, Title } = Typography;
 const { Step } = Steps;
 
 const Sender = () => (
@@ -211,17 +223,6 @@ class Create_order_page extends React.Component {
     });
   };
 
-  // postBill = (rate) => {
-  //     let obj = {
-  //         'billing_information': {
-  //             'on_display' :false
-  //         }
-  //     }
-  //     obj.billing_information.on_display = true
-  //     obj.billing_information.total = rate
-  //     this.props.set_form_info(obj)
-  // }
-
   onClose = () => {
     this.setState({
       visible: false,
@@ -252,22 +253,6 @@ class Create_order_page extends React.Component {
       });
     } else this.handle_redirect(current);
   };
-
-  // reset = () => {
-  //     let re_status = [
-  //         'process',
-  //         'wait',
-  //         'wait',
-  //         'wait',
-  //     ]
-  //     let re_disabled = [
-  //         false,
-  //         true,
-  //         true,
-  //         true
-  //     ]
-  //     this.setState({ status: re_status, disabled: re_disabled })
-  // }
 
   set_all_disabled = () => {
     let all_disabled = [true, true, true, true];
@@ -406,9 +391,10 @@ class Create_order_page extends React.Component {
         parcel_list: new_parcel_list,
       },
     };
-    let select_service = this.props.form.service_information.service_content.filter(
-      (item) => item.check == true
-    );
+    let select_service =
+      this.props.form.service_information.service_content.filter(
+        (item) => item.check == true
+      );
 
     let update_form = {
       ...this.props.form,
@@ -427,22 +413,20 @@ class Create_order_page extends React.Component {
         content: "正在生成运单",
         key: "pay",
         duration: 0,
-        style: { marginLeft: 200 },
       });
+      console.log(update_form);
       let response = await post("/user/create_shipment", update_form);
+      // console.log(response);
       let labels = response.data.parcel.parcelList.map((item) => {
         return {
-          agent: response.data.service.agent,
+          type: response.data.service.carrier_type,
           key: item["_id"],
           url: item.label[0],
           tracking_numbers: item.tracking_numbers[0],
         };
       });
-      let {
-        service_information,
-        parcel_information,
-        tracking_information,
-      } = this.state;
+      let { service_information, parcel_information, tracking_information } =
+        this.state;
       service_information = [
         {
           label: "状态",
@@ -451,7 +435,7 @@ class Create_order_page extends React.Component {
 
         {
           label: "渠道",
-          content: response.data.service.asset.name,
+          content: response.data.service.carrier_type,
           span: 2,
         },
 
@@ -531,11 +515,14 @@ class Create_order_page extends React.Component {
         service_information,
         tracking_information,
       });
+
       message.success({
-        content: "成功获取运单!",
+        content: "运单完成",
         key: "pay",
-        style: { marginLeft: 200 },
+        duration: 0.5,
+        // style: { marginLeft: 200 },
       });
+
       let obj = {
         payment_information: {
           // is_required_fetch:true,
@@ -552,13 +539,17 @@ class Create_order_page extends React.Component {
       };
       this.props.update_form_info(obj);
     } catch (error) {
+      this.setState({ is_loading: false });
+      console.log(error);
       message.error({
-        content: "创建未成功，远程服务器报错",
+        content:
+          error.response && error.response.data
+            ? error.response.data.message ||
+              "创建未成功，远程服务器报错"
+            : "远程服务器没响应",
         key: "pay",
         duration: 5,
       });
-      console.log(error);
-      this.setState({ is_loading: false });
     }
   };
 
@@ -567,7 +558,7 @@ class Create_order_page extends React.Component {
       current: 0,
       step_status: "process",
     });
-
+    //判断 reset 是否来自 重置所有 按钮 ， 保留信息有所不同。
     if (isWithButton) {
       this.props.reset_all_info_with_buttom();
       this.child.resetAllForm();
@@ -575,19 +566,6 @@ class Create_order_page extends React.Component {
       this.props.reset_all_info();
     }
   };
-
-  //   let obj = {
-  //     service_information: {
-  //       is_required_fetch: true,
-  //       is_select: false,
-  //       service_name: undefined,
-  //       panel_title: "请先完成输入信息",
-  //       font_type: "secondary",
-  //       service_content: [],
-  //     },
-  //   };
-  //   this.props.set_form_info(obj);
-  // }
 
   resetWithRepeat = () => {
     let obj = {
@@ -603,8 +581,8 @@ class Create_order_page extends React.Component {
     this.props.set_form_info(obj);
     this.setState({ current: 0, step_status: "process" });
     message.success({
-      content: "已加载相同信息",
-      duration: 2,
+      content: "加载相同信息",
+      duration: 1,
     });
   };
 
@@ -665,29 +643,267 @@ class Create_order_page extends React.Component {
     );
   };
 
-  display_billing_detail = () => {
-    let { unit_weight } = this.props.billing_information;
-    let billingDetail = this.props.billing_information.detail.map(
-      (item, index) => {
-        return (
-          <Col span={8} key={index}>
-            {" "}
-            <Text style={{ color: "#1890ff", fontSize: 16 }}>
-              包裹 {index + 1}
-            </Text>{" "}
-            <Text style={{ color: "#1890ff", fontSize: 12 }}>
+  display_total_detail = () => {
+    let { detail, carrier } = this.props.billing_information;
+    console.log(detail);
+    return (
+      <span
+        style={{
+          position: "fixed",
+          top: 98,
+          left: "50.5%",
+          textAlign: "right",
+        }}
+      >
+        <span style={{ marginLeft: 84, marginTop: 12 }}>
+          {" "}
+          <Text style={{ fontSize: 12 }}>基础运费</Text> -
+          <Text strong style={{ fontSize: 13 }}>
+            $ {handle_total_charge(carrier, detail).total_base_amount}
+          </Text>
+          <Divider type="vertical" />
+          <Text style={{ fontSize: 12 }}>附加费</Text> -
+          <Text strong style={{ fontSize: 13 }}>
+            $ {handle_total_charge(carrier, detail).total_surcharge_amount}
+          </Text>
+          {this.props.billing_information.SurchargeTotal &&
+          handle_ups_extra_surcharge(
+            carrier,
+            this.props.billing_information.SurchargeTotal
+          ).total != 0 ? (
+            <span>
               {" "}
-              : 计费重量 - {item.weight} {unit_weight}, 计费区域 - zone{" "}
-              {item.zone} , 邮费 -{" "}
-            </Text>{" "}
-            <Text underline style={{ color: "#1890ff", fontSize: 14 }}>
-              $ {item.price}
-            </Text>
-          </Col>
-        );
-      }
+              <Divider type="vertical" />
+              <Text style={{ fontSize: 12 }}>额外附加费</Text> -
+              <Text strong style={{ fontSize: 13 }}>
+                ${" "}
+                {
+                  handle_ups_extra_surcharge(
+                    carrier,
+                    this.props.billing_information.SurchargeTotal
+                  ).total
+                }
+              </Text>
+              <Popover
+                overlayInnerStyle={{
+                  width: 240,
+                  height: 125,
+                  overflow: "auto",
+                }}
+                // overlayStyle={{ width: 150, height: 25 }}
+                placement="rightBottom"
+                // title={"detail"}
+                content={
+                  <div>
+                    <Row gutter={[24, 2]}>
+                      {handle_ups_extra_surcharge(
+                        carrier,
+                        this.props.billing_information.SurchargeTotal
+                      ).items.length > 0
+                        ? handle_ups_extra_surcharge(
+                            carrier,
+                            this.props.billing_information.SurchargeTotal
+                          ).items.map((e, index) => (
+                            <Col key={index + "1"} span={24}>
+                              {" "}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                }}
+                              >
+                                {" "}
+                                <Text type="secondary" style={{ fontSize: 11 }}>
+                                  {e.name}
+                                </Text>
+                                <Text type="secondary" style={{ fontSize: 11 }}>
+                                  $ {e.amount}
+                                </Text>
+                              </div>
+                              <Divider
+                                style={{ marginTop: 2, marginBottom: 2 }}
+                                dashed
+                              />
+                            </Col>
+                          ))
+                        : undefined}
+                    </Row>
+                  </div>
+                }
+                trigger="hover"
+              >
+                <FileTextTwoTone style={{ fontSize: 11, marginLeft: 6 }} />
+              </Popover>
+            </span>
+          ) : undefined}
+        </span>
+        <Divider style={{ marginTop: 8, marginBottom: 8 }} />
+        <span style={{ marginLeft: 84 }}>
+          {" "}
+          <Text style={{ fontSize: 12 }}>服务费</Text> -
+          <Text strong style={{ fontSize: 13 }}>
+            $ 0.00
+          </Text>
+        </span>
+        <Divider style={{ marginTop: 8, marginBottom: 8 }} />
+        <span style={{ marginLeft: 84 }}>
+          {" "}
+          <Text style={{ fontSize: 14 }}>总运费</Text> -
+          <Text strong style={{ fontSize: 16 }}>
+            $ {this.props.billing_information.NegotiateTotal}
+          </Text>{" "}
+          <Text
+            delete={this.props.billing_information.NegotiateTotal != undefined}
+            strong
+            style={{
+              fontSize:
+                this.props.billing_information.NegotiateTotal != undefined
+                  ? 13
+                  : 16,
+            }}
+          >
+            {(
+              parseFloat(handle_total_charge(carrier, detail).total_amount) +
+              parseFloat(
+                handle_ups_extra_surcharge(
+                  carrier,
+                  this.props.billing_information.SurchargeTotal
+                ).total
+              )
+            ).toFixed(2)}
+          </Text>
+        </span>
+        <Divider style={{ marginTop: 8, marginBottom: 8 }} />
+      </span>
     );
-    return billingDetail;
+  };
+
+  display_billing_detail = () => {
+    let { unit_weight, carrier } = this.props.billing_information;
+    let billingDetail = this.props.billing_information.detail;
+
+    let result = (
+      <List
+        size="small"
+        itemLayout="horizontal"
+        style={{ width: 450 }}
+        dataSource={billingDetail}
+        // bordered
+        // split = {false}
+        renderItem={(item, index) => (
+          <List.Item>
+            <List.Item.Meta
+              description={
+                <span>
+                  <Text style={{ fontSize: 14 }}>包裹</Text>{" "}
+                  <Text strong style={{ fontSize: 14 }}>
+                    {" "}
+                    {index + 1}
+                  </Text>
+                  <Text style={{ fontSize: 12 }}>: 计费重量 -</Text>
+                  <Text strong style={{ fontSize: 13 }}>
+                    {item.weight} {unit_weight}
+                  </Text>
+                  <Divider type="vertical" />
+                  <Text style={{ fontSize: 12 }}>计费分区 - zone</Text>
+                  <Text strong style={{ fontSize: 13 }}>
+                    {item.zone}
+                  </Text>
+                  <Divider type="vertical" />
+                  <Text style={{ fontSize: 12 }}>费用 -</Text>
+                  <Text strong style={{ fontSize: 16 }}>
+                    $ {item.price}
+                  </Text>
+                  <span>
+                    <Popover
+                      overlayInnerStyle={{
+                        width: 240,
+                        height: 125,
+                        overflow: "auto",
+                      }}
+                      // overlayStyle={{ width: 150, height: 25 }}
+                      placement="rightBottom"
+                      // title={"detail"}
+                      content={
+                        <div>
+                          <Row gutter={[24, 2]}>
+                            <Col span={24}>
+                              {" "}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                }}
+                              >
+                                <Text type="secondary" style={{ fontSize: 11 }}>
+                                  基础
+                                </Text>
+                                <Text type="secondary" style={{ fontSize: 11 }}>
+                                  $ {item.basePrice}
+                                </Text>
+                              </div>
+                              <Divider
+                                style={{ marginTop: 2, marginBottom: 2 }}
+                                dashed
+                              />
+                            </Col>
+
+                            {Array.isArray(item.surCharges)
+                              ? item.surCharges.length > 0
+                                ? item.surCharges.map((e, index) => (
+                                    <Col key={index + "1"} span={24}>
+                                      {" "}
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                        }}
+                                      >
+                                        {" "}
+                                        <Text
+                                          type="secondary"
+                                          style={{ fontSize: 11 }}
+                                        >
+                                          {handle_surcharge(carrier, e).name}
+                                        </Text>
+                                        <Text
+                                          type="secondary"
+                                          style={{ fontSize: 11 }}
+                                        >
+                                          ${" "}
+                                          {handle_surcharge(carrier, e).amount}
+                                        </Text>
+                                      </div>
+                                      <Divider
+                                        style={{
+                                          marginTop: 2,
+                                          marginBottom: 2,
+                                        }}
+                                        dashed
+                                      />
+                                    </Col>
+                                  ))
+                                : undefined
+                              : undefined}
+                          </Row>
+                        </div>
+                      }
+                      trigger="hover"
+                    >
+                      <FileTextTwoTone
+                        style={{ fontSize: 11, marginLeft: 6 }}
+                      />
+                    </Popover>
+                  </span>
+                </span>
+              }
+            />
+          </List.Item>
+        )}
+      />
+    );
+
+    return result;
   };
 
   shouldComponentUpdate(nextProps, nextState) {
@@ -699,101 +915,142 @@ class Create_order_page extends React.Component {
   }
 
   componentDidMount() {
-    // this.props.user_auth()
-
     window.scrollTo(0, 0);
   }
 
+  componentWillUnmount() {
+    //  this.props.reset();
+  }
+
   render() {
-    // console.log(this.props.form)
-    const { current } = this.state;
+    const { carrier, detail } = this.props.billing_information;
+    const { current, is_loading } = this.state;
     return (
       <div id="create_order">
-        {/* <div style={{ background: '#fff', boxShadow: 'rgb(217, 217, 217) 1px 1px 7px 0px', padding: 18,  }}>
-                    <Steps
-                        current={current}
-                        status={this.state.step_status}
-                        style={{ width: '100%' }} >
-                        <Step key="选择服务" title="填表" description="填写信息,选择服务" disabled={this.state.disabled[0]} />
-                        <Step key="选择支付方式" title="支付" description="选择付款方式" disabled={this.state.disabled[2]} />
-                        <Step key="订单完成并打印运单" title="完成" description="打印运单" disabled={this.state.disabled[3]} />
-                    </Steps>
-                </div> */}
-
-        <div style={{ background: "#F8F8F8", marginTop: 16 }}>
-          {this.display_content(current_step[current])}
-        </div>
-
-        <div style={{ marginTop: 32 }}>
-          {current == 1 ? null : this.show_action(current)}
-        </div>
-
-        {/* <Button type="primary" onClick={this.showDrawer}>
-                    Open
-                </Button> */}
-        <Drawer
-          // style ={{overflow: 'hidden',}}
-          title={
-            <div>
-              <Row>
-                <Col span={8} style={{ fontSize: 18 }}>
-                  {" "}
-                  <MoneyCollectTwoTone
-                    style={{ display: "inline-block", fontSize: "18px" }}
-                  />{" "}
-                  <a>总费用 ： $ {this.props.billing_information.total} </a>
-                </Col>
-                <Col style={{ textAlign: "center" }} span={8}>
-                  {" "}
-                  <UpOutlined
-                    style={{ textAlign: "center", fontSize: 18 }}
-                    rotate={this.state.is_expand ? 180 : 0}
-                    onClick={this.changeHeight}
-                  />{" "}
-                </Col>
-                <Col style={{ textAlign: "right" }} span={8}>
-                  {" "}
-                  <Button
-                    loading={this.state.is_loading}
-                    size="small"
-                    style={{ width: 120 }}
-                    type="primary"
-                    disabled={!this.props.payment_information.is_finished}
-                    onClick={() => this.pay()}
-                  >
-                    递交
-                  </Button>{" "}
-                </Col>
-              </Row>
-            </div>
-          }
-          headerStyle={{ background: "#fafafa" }}
-          bodyStyle={{
-            background: "#f5f5f5",
-            paddingLeft: 48,
-            paddingRight: 48,
-          }}
-          drawerStyle={{ overflow: "hidden", background: "#fafafa" }}
-          getContainer="#content"
-          style={{ position: "absolute" }}
-          // style={{ paddingLeft: this.props.collapsed ? 80 : 256 }}
-          placement="bottom"
-          zIndex={200}
-          mask={false}
-          closable={false}
-          visible={this.props.billing_information.on_display}
-          // visible={true}
-          height={this.state.is_expand ? 200 : 48}
-        >
-          {/* <Space style={{ paddingleft: 16, paddingRightL: 16 }} size={60}>{this.props.billing_information.detail ? this.display_billing_detail() : undefined}</Space> */}
-          <div>
-            <Row gutter={24} size={60}>
-              {this.props.billing_information.detail
-                ? this.display_billing_detail()
-                : undefined}
-            </Row>
+        <Spin indicator={<span></span>} spinning={is_loading}>
+          <div style={{ background: "#F8F8F8", marginTop: 16 }}>
+            {this.display_content(current_step[current])}
           </div>
-        </Drawer>
+
+          <div style={{ marginTop: 32 }}>
+            {current == 1 ? null : this.show_action(current)}
+          </div>
+
+          <Drawer
+            // style ={{overflow: 'hidden',}}
+            title={
+              <div>
+                <Row align="middle">
+                  <Col span={8} style={{ paddingLeft: 12, fontSize: 18 }}>
+                    {/* <MoneyCollectTwoTone
+                      style={{ display: "inline-block", fontSize: "18px" }}
+                    /> */}
+                    <Space size={48} align="baseline">
+                      <Title level={4}>
+                        <Text style={{ fontSize: 16 }} strong>
+                          支付费用 ：
+                        </Text>{" "}
+                        ${" "}
+                        {this.props.billing_information.NegotiateTotal
+                          ? this.props.billing_information.NegotiateTotal
+                          : this.props.billing_information.total}{" "}
+                      </Title>
+                      <Button
+                        loading={this.state.is_loading}
+                        size="small"
+                        style={{ width: 100 }}
+                        type="primary"
+                        disabled={
+                          !this.props.payment_information.is_finished &&
+                          this.props.billing_type != "prepaid"
+                        }
+                        onClick={() => this.pay()}
+                      >
+                        购买
+                      </Button>{" "}
+                    </Space>
+                  </Col>
+                  <Col style={{ textAlign: "center" }} span={8}>
+                    {" "}
+                    <UpOutlined
+                      style={{
+                        color: "#40a9ff",
+                        textAlign: "center",
+                        fontSize: 18,
+                        width: 150,
+                      }}
+                      rotate={this.state.is_expand ? 180 : 0}
+                      onClick={this.changeHeight}
+                    />{" "}
+                  </Col>
+                  <Col style={{ textAlign: "right" }} span={8}>
+                    {" "}
+                  </Col>
+                </Row>
+              </div>
+            }
+            headerStyle={{
+              height: 64,
+              // paddingLeft: 225,
+              background: "#ffffff",
+            }}
+            bodyStyle={{
+              background: "#ffffff",
+              paddingLeft: 48,
+              // paddingLeft: 273,
+              // paddingRight: 0,
+              direction: "rtl",
+            }}
+            destroyOnClose={true}
+            drawerStyle={{ overflow: "hidden", background: "#fafafa" }}
+            getContainer={"#content"}
+            // getContainer={"#Page"}
+            // getContainer={"#Home"}
+            style={{
+              position: "absolute",
+              // marginLeft: 215,
+              // paddingLeft: 215,
+              // paddingRight: 215,
+              // overflow: "hidden",
+            }}
+            // style={{ paddingLeft: this.props.collapsed ? 80 : 256 }}
+            placement="bottom"
+            zIndex={1000}
+            mask={false}
+            closable={false}
+            visible={this.props.billing_information.on_display}
+            // visible={true}
+            height={this.state.is_expand ? 256 : 64}
+          >
+            <Row gutter={24}>
+              <Col span={10} style={{ direction: "ltr" }}>
+                {this.props.billing_information.detail
+                  ? this.display_total_detail()
+                  : undefined}
+              </Col>
+              <Col span={2}>
+                <Divider
+                  style={{
+                    top: 96,
+                    left: "49.44%",
+                    position: "fixed",
+                    borderColor: "#f0f0f0",
+                    height: 110,
+                  }}
+                  type="vertical"
+                />
+              </Col>
+              <Col span={9} style={{ direction: "ltr" }}>
+                <div>
+                  {this.props.billing_information.detail
+                    ? this.display_billing_detail()
+                    : undefined}
+                </div>
+                {/* <Divider style={{ marginTop: 0, marginBottom: 8 }} /> */}
+              </Col>
+            </Row>
+          </Drawer>
+        </Spin>
       </div>
     );
   }
@@ -802,6 +1059,7 @@ class Create_order_page extends React.Component {
 function mapStateToProps(state) {
   // console.log(state.shipping_platform_single_order.form)
   return {
+    billing_type: state.shipping_platform_user.account.user_info.billing_type,
     billing_information:
       state.shipping_platform_single_order.form.billing_information,
     payment_information:

@@ -45,6 +45,7 @@ import { bindActionCreators } from "redux";
 const uid = new ShortUniqueId();
 const { Text } = Typography;
 const { Panel } = Collapse;
+const { Option } = Select;
 
 const content = (parcel_form) => {
   return {
@@ -52,13 +53,21 @@ const content = (parcel_form) => {
       // { "label": '相同多件', "key": "same_pack", "is_required": false, "message": undefined, "placehold": '默认一件', "span_value": 4, type: 'input', },
       // { "label": '单位', "key": "unit", "is_required": false, "message": undefined, "placehold": undefined, "span_value": 5, type: 'unit', },
       {
-        label: "相同多件",
+        label: "相同件",
         key: "same_pack",
-        is_required: false,
-        message: undefined,
+        is_required: true,
         placehold: "默认一件",
-        span_value: 4,
+        span_value: 3,
         type: "numberInput",
+        rule: [
+          { required: true },
+          {
+            pattern: /^(5[0]|[1-4][0-9]|[1-9])$/,
+            message: "From 1 to 50. ",
+          },
+        ],
+        // min: 0,
+        // max: 51,
       },
       {
         label: `重量 (${parcel_form.unit_weight})`,
@@ -67,8 +76,10 @@ const content = (parcel_form) => {
         is_required: true,
         message: undefined,
         placehold: "重量",
-        span_value: 5,
+        span_value: 6,
         type: "numberInput",
+        rule: [{ required: true }],
+        min: 0,
       },
       {
         label: `长 (${parcel_form.unit_length})`,
@@ -79,6 +90,8 @@ const content = (parcel_form) => {
         placehold: "长度",
         span_value: 5,
         type: "numberInput",
+        rule: [{ required: true }],
+        min: 0,
       },
       {
         label: `宽 (${parcel_form.unit_length})`,
@@ -89,6 +102,8 @@ const content = (parcel_form) => {
         placehold: "宽度",
         span_value: 5,
         type: "numberInput",
+        rule: [{ required: true }],
+        min: 0,
       },
       {
         label: `高 (${parcel_form.unit_length})`,
@@ -99,6 +114,8 @@ const content = (parcel_form) => {
         placehold: "高度",
         span_value: 5,
         type: "numberInput",
+        rule: [{ required: true }],
+        min: 0,
       },
 
       {
@@ -107,16 +124,28 @@ const content = (parcel_form) => {
         is_required: false,
         message: undefined,
         placehold: "自定义单号，选填，如不填写，系统自动完成",
-        span_value: 14,
+        span_value: 9,
+        rule: [{ required: false }],
         type: "input",
       },
       {
-        label: "备注信息",
-        key: "reference",
+        label: "面单备注一",
+        key: "reference_1",
         is_required: false,
         message: undefined,
-        placehold: "运单上自定义信息，选填",
-        span_value: 10,
+        placehold: "运单上自定义信息位置一，选填",
+        span_value: 7,
+        rule: [{ required: false }],
+        type: "input",
+      },
+      {
+        label: "面单备注二",
+        key: "reference_2",
+        is_required: false,
+        message: undefined,
+        placehold: "运单上自定义信息位置二，选填",
+        span_value: 8,
+        rule: [{ required: false ,},{ max: 35 }],
         type: "input",
       },
       // { "label": 'sku', "key": "sku", "is_required": false, "message": undefined, "placehold": '产品的sku', "span_value": 9, type: 'input', },
@@ -131,31 +160,38 @@ const content = (parcel_form) => {
 const popover_content = (parcel_form, changeUnit) => {
   return (
     <div>
-      <div>
-        <Space size="large">
-          <Text>长度单位</Text>
-          <Radio.Group
-            value={parcel_form.unit_length}
-            onChange={(e) => changeUnit(e.target.value, "length")}
-          >
-            <Radio value="in">inch</Radio>
-            <Radio value="cm">cm</Radio>
-          </Radio.Group>
-        </Space>
-      </div>
-      <div style={{ marginTop: 12 }}>
-        <Space size="large">
-          <Text>重量单位</Text>
-          <Radio.Group
-            onChange={(e) => changeUnit(e.target.value, "weight")}
-            value={parcel_form.unit_weight}
-          >
-            <Radio value={"oz"}>oz</Radio>
-            <Radio value={"lb"}>lb</Radio>
-            <Radio value={"kg"}>kg</Radio>
-          </Radio.Group>
-        </Space>
-      </div>
+      <Space>
+        <Text type="secondary" style={{ marginLeft: 12 }}>
+          重量单位-
+        </Text>
+        <Radio.Group
+          onChange={(e) => changeUnit(e.target.value, "weight")}
+          value={parcel_form.unit_weight}
+        >
+          <Radio key="oz" value={"oz"}>
+            OZ
+          </Radio>
+          <Radio key="lb" value={"lb"}>
+            LB
+          </Radio>
+          <Radio key="kg" value={"kg"}>
+            KG
+          </Radio>
+        </Radio.Group>
+        <Divider type="vertical" />
+        <Text type="secondary">长度单位-</Text>
+        <Radio.Group
+          value={parcel_form.unit_length}
+          onChange={(e) => changeUnit(e.target.value, "length")}
+        >
+          <Radio key="in" value="in">
+            INCH
+          </Radio>
+          <Radio key="cm" value="cm">
+            CM
+          </Radio>
+        </Radio.Group>
+      </Space>
     </div>
   );
 };
@@ -178,18 +214,22 @@ const merge_parcel_info = (data, unit_length, unit_weight) => {
   let array_unfinished = data.filter(
     (item) => item.panel_title == "编辑中" || item.panel_title == "未录入"
   );
-  console.log(array_unfinished);
+  // console.log(array_unfinished);
   let is_ready = array_finished.length == data.length;
 
-  nubmer_is_finished = array_finished.reduce((accumulator, currentValue) => {
-    // console.log(Number(currentValue.pack_info.weight))
-    return accumulator + Number(currentValue.pack_info.same_pack);
-  }, 0);
+  nubmer_is_finished = Math.ceil(
+    array_finished.reduce((accumulator, currentValue) => {
+      // console.log(Number(currentValue.pack_info.weight))
+      return accumulator + Number(currentValue.pack_info.same_pack);
+    }, 0)
+  );
 
-  number_is_editing = array_unfinished.reduce((accumulator, currentValue) => {
-    // console.log(Number(currentValue.pack_info.weight))
-    return accumulator + Number(currentValue.pack_info.same_pack);
-  }, 0);
+  number_is_editing = Math.ceil(
+    array_unfinished.reduce((accumulator, currentValue) => {
+      // console.log(Number(currentValue.pack_info.weight))
+      return accumulator + Number(currentValue.pack_info.same_pack);
+    }, 0)
+  );
   //计算总重量 放在 title
   if (array_finished.length > 0) {
     total_weight = array_finished.reduce((accumulator, currentValue) => {
@@ -206,20 +246,28 @@ const merge_parcel_info = (data, unit_length, unit_weight) => {
     //判断是否完成，设置title
     title =
       array_finished.length == 1
-        ? `已输入 ${
+        ? `已输入 ${Math.ceil(
             1 * array_finished[0].pack_info.same_pack
-          } 个包裹，重量 ${total_weight}  ${unit_weight} , 每个尺寸 ${
-            data[0].pack_info.length
-          } x ${data[0].pack_info.width} x ${
-            data[0].pack_info.height
-          } ${unit_length} `
-        : `${1 * array_unfinished[0].pack_info.same_pack} 个包裹正在编辑`;
+          )} 个包裹，重量 ${parseFloat(total_weight).toFixed(
+            2
+          )}  ${unit_weight} , 每个尺寸 ${data[0].pack_info.length} x ${
+            data[0].pack_info.width
+          } x ${data[0].pack_info.height} ${unit_length} `
+        : `${
+            Math.ceil(1 * array_unfinished[0].pack_info.same_pack) < 0
+              ? 1
+              : Math.ceil(1 * array_unfinished[0].pack_info.same_pack)
+          } 个包裹正在编辑`;
   } else {
     //如果是多个包裹，判断是否都完成，设置title
     title =
       array_unfinished.length == 0
-        ? `已输入 ${nubmer_is_finished} 个包裹，总重量 ${total_weight} ${unit_weight}`
-        : `已输入 ${nubmer_is_finished}个包裹，总重量 ${total_weight} ${unit_weight} ，${number_is_editing}个正在编辑`;
+        ? `已输入 ${nubmer_is_finished} 个包裹，总重量 ${parseFloat(
+            total_weight
+          ).toFixed(2)} ${unit_weight}`
+        : `已输入 ${nubmer_is_finished} 个包裹，总重量 ${parseFloat(
+            total_weight
+          ).toFixed(2)} ${unit_weight} ，${number_is_editing}个正在编辑`;
   }
 
   font_type = array_unfinished.length > 0 ? "warning" : "strong";
@@ -263,6 +311,7 @@ const getFactor = (CURRENT_UNIT, TARGET_UNIT) => {
   }
   return factor;
 };
+
 class Parcel extends React.Component {
   constructor(props) {
     super(props);
@@ -277,10 +326,18 @@ class Parcel extends React.Component {
 
   change_unit = (target_unit, type) => {
     this.rest_sev_pay_form();
+
     const CURRENT_UNIT_LENGTH = this.props.parcel_information.unit_length;
     const CURRENT_UNIT_WEIGHT = this.props.parcel_information.unit_weight;
     let new_unit_weight = type == "length" ? CURRENT_UNIT_WEIGHT : target_unit;
     let new_unit_length = type == "length" ? target_unit : CURRENT_UNIT_LENGTH;
+
+    this.setState({
+      unit_length: new_unit_length,
+      unit_weight: new_unit_weight,
+    });
+    message.warning({ content: "单位已转换", duration: 0.5 });
+
     let factor =
       type == "length"
         ? getFactor(CURRENT_UNIT_LENGTH, target_unit)
@@ -331,6 +388,8 @@ class Parcel extends React.Component {
       new_unit_weight
     );
 
+    console.log(update_data);
+
     let obj = {
       parcel_information: {
         unit_length: new_unit_length,
@@ -342,19 +401,12 @@ class Parcel extends React.Component {
       },
     };
 
-    // console.log(obj);
+    console.log(obj);
     obj["service_information"] = {};
     //递交到redux
     obj["service_information"]["is_required_fetch"] = true;
 
-    this.setState({
-      unit_length: new_unit_length,
-      unit_weight: new_unit_weight,
-    });
-
     this.props.set_form_info(obj);
-
-    message.success("单位已经切换，已填数据将自动完成转换");
   };
 
   rest_sev_pay_form = () => {
@@ -387,11 +439,10 @@ class Parcel extends React.Component {
         },
       };
       // reset service and payment panel
-      update_obj["setting"][
-        "open_panel"
-      ] = this.props.setting.open_panel.filter(
-        (item) => item != "service_information"
-      );
+      update_obj["setting"]["open_panel"] =
+        this.props.setting.open_panel.filter(
+          (item) => item != "service_information"
+        );
       update_obj["setting"]["open_panel"] = update_obj["setting"][
         "open_panel"
       ].filter((item) => item != "payment_information");
@@ -489,9 +540,8 @@ class Parcel extends React.Component {
       is_required_fetch: true,
     };
     // obj['setting']['open_panel'] = this.props.setting.open_panel.filter(item => item != 'service_information')
-    let update_data = (obj["parcel_information"][
-      "parcel_list"
-    ] = this.props.parcel_information.parcel_list.concat(data));
+    let update_data = (obj["parcel_information"]["parcel_list"] =
+      this.props.parcel_information.parcel_list.concat(data));
 
     // let update_data = this.props.parcel_information.parcel_list.concat(data)
 
@@ -510,7 +560,7 @@ class Parcel extends React.Component {
         parcel_list: update_data,
       },
     };
-    this.props.set_form_info(obj);
+    this.props.update_form_info(obj);
   }
 
   remove_one_pack = (id_no) => {
@@ -590,9 +640,9 @@ class Parcel extends React.Component {
       (item) => item.is_panel_opened == false
     );
     return is_all_closed ? (
-      <FolderOutlined style={{ fontSize: 18 }} />
+      <FolderOutlined style={{ fontSize: 16 }} />
     ) : (
-      <FolderOpenOutlined style={{ fontSize: 18 }} />
+      <FolderOpenOutlined style={{ fontSize: 16, color: "#1890ff" }} />
     );
   };
 
@@ -604,13 +654,10 @@ class Parcel extends React.Component {
   shouldComponentUpdate(nextProps, nextState) {
     const current_form = this.props.parcel_information;
     const next_form = nextProps.parcel_information;
-    if (
-      _.isEqual(current_form, next_form) &&
-      _.isEqual(this.state, nextState)
-      // this.state.isThisPanelOpend == nextState.isThisPanelOpend
-    )
-      return false;
-    return true;
+
+    let result =
+      !_.isEqual(current_form, next_form) || !_.isEqual(this.state, nextState);
+    return result;
   }
 
   onRef = (ref) => {
@@ -623,6 +670,9 @@ class Parcel extends React.Component {
 
   render() {
     console.log("parcel_form form did render");
+    const is_all_closed = this.props.parcel_information.parcel_list.every(
+      (item) => item.is_panel_opened == false
+    );
     // console.log(this.props.parcel_information.parcel_list)
     return (
       <div>
@@ -631,88 +681,88 @@ class Parcel extends React.Component {
                     <Radio value='oz/in'>oz/in</Radio>
                     <Radio value='kg/cm'>kg/cm</Radio>
                 </Radio.Group> */}
-        <div style={{ textAlign: "left" }}>
-          <Space size={1} style={{ marginBottom: 8 }}>
-            <Button
-              type="text"
-              onClick={(event) => {
-                // event.stopPropagation();
-                this.closeAllpacelPanel();
-              }}
-              icon={this.getIconType()}
-            />
 
-            <Divider
-              style={{ marginLeft: 0, marginRight: 0 }}
-              type="vertical"
-            />
+        <Row gutter={24} style={{ paddingLeft: 48 }}>
+          {/* <Col
+            xxl={{ span: 2 }}
+            xl={{ span: 24 }}
+            lg={{ span: 24 }}
+            style={{ marginTop: 24 }}
+          >
+            {popover_content(this.props.parcel_information, this.change_unit)}
+          </Col> */}
 
-            <Popover
-              trigger={["click"]}
-              content={popover_content(
-                this.props.parcel_information,
-                this.change_unit
-                // this.props.set_form_info
-              )}
-              placement="rightTop"
-              onVisibleChange={(visible) => {
-                this.setState({ isActive: visible });
-              }}
-            >
-              <Button
-                type="text"
-                // disabled
-                onClick={(event) => {
-                  event.stopPropagation();
-                }}
-                icon={
-                  <SettingOutlined
-                    style={{ fontSize: 18 }}
-                    // spin={this.state.isActive}
-                    rotate={this.state.isActive ? 90 : 180}
-                  />
+          <Col span={21}>
+            <div style={{ textAlign: "right", marginBottom: 12 }}>
+              {popover_content(this.props.parcel_information, this.change_unit)}
+            </div>
+            {this.props.parcel_information.parcel_list.map((item, index) => (
+              <Parcel_component
+                is_mutiple_pack={
+                  item.pack_info
+                    ? item.pack_info.same_pack > 1
+                      ? true
+                      : false
+                    : false
                 }
+                rest_sev_pay_form={() => this.rest_sev_pay_form()}
+                unit_length={this.state.unit_length}
+                unit_weight={this.state.unit_weight}
+                onRef={this.onRef}
+                handle_panel={(e, key) => this.handle_panel(e, key)}
+                parcel={item}
+                data={item.pack_info}
+                content={content(this.props.parcel_information)}
+                onBlurToRedux={(data) => this.onBlurToRedux(data)}
+                submit_info={(data) => this.submit_info(data)}
+                //为什么不能传key作为标识
+                //`key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop
+                title={item.panel_title}
+                font_type={item.font_type}
+                key={item.key}
+                id_no={item.key}
+                position={index}
+                tag_end={this.getPackindex(index)}
+                tag_start={
+                  this.getPackindex(index) - item.pack_info.same_pack + 1
+                }
+                remove={(id_no) => this.remove_one_pack(id_no)}
               />
-            </Popover>
-          </Space>
-        </div>
+            ))}
 
-        {this.props.parcel_information.parcel_list.map((item, index) => (
-          <Parcel_component
-            is_mutiple_pack={
-              item.pack_info
-                ? item.pack_info.same_pack > 1
-                  ? true
-                  : false
-                : false
-            }
-            rest_sev_pay_form={() => this.rest_sev_pay_form()}
-            unit_length={this.state.unit_length}
-            unit_weight={this.state.unit_weight}
-            onRef={this.onRef}
-            handle_panel={(e, key) => this.handle_panel(e, key)}
-            parcel={item}
-            data={item.pack_info}
-            content={content(this.props.parcel_information)}
-            onBlurToRedux={(data) => this.onBlurToRedux(data)}
-            submit_info={(data) => this.submit_info(data)}
-            //为什么不能传key作为标识
-            //`key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop
-            title={item.panel_title}
-            font_type={item.font_type}
-            key={item.key}
-            id_no={item.key}
-            position={index}
-            tag_end={this.getPackindex(index)}
-            tag_start={this.getPackindex(index) - item.pack_info.same_pack + 1}
-            remove={(id_no) => this.remove_one_pack(id_no)}
-          />
-        ))}
-        <span>
-          <a style={{ paddingLeft: 48 }} onClick={() => this.add_one_package()}>
-            <FileAddOutlined /> 添加一个包裹
-          </a>
-        </span>
+            <Space align="center" size={1} style={{ marginBottom: 0 }}>
+              <a
+                onClick={(event) => {
+                  this.closeAllpacelPanel();
+                }}
+              >
+                <Space size={2} align="center">
+                  {" "}
+                  {this.getIconType()}{" "}
+                  <Text style={{ fontSize: 12, color: "#1890ff" }}>
+                    {" "}
+                    收起面板{" "}
+                  </Text>{" "}
+                </Space>
+              </a>
+              <Divider type="vertical" />
+
+              <a
+                style={{ paddingLeft: 0 }}
+                onClick={() => this.add_one_package()}
+              >
+                <Space size={2} align="center">
+                  {" "}
+                  <FileAddOutlined style={{ fontSize: 14 }} />
+                  <Text style={{ fontSize: 12, color: "#1890ff" }}>
+                    {" "}
+                    添加单个{" "}
+                  </Text>{" "}
+                </Space>
+              </a>
+            </Space>
+          </Col>
+        </Row>
       </div>
     );
   }

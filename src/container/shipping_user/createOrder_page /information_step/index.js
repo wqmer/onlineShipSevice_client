@@ -7,6 +7,7 @@ import {
   Divider,
   Dropdown,
   Popover,
+  Tag,
 } from "antd";
 import React, { Component } from "react";
 import {
@@ -17,6 +18,7 @@ import {
   Link,
   NavLink,
 } from "react-router-dom";
+import { LoadingOutlined } from "@ant-design/icons";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 import { actions as single_order_form } from "../../../../reducers/shipping_platform/single_order_form";
@@ -42,8 +44,9 @@ import Parcel_form from "./parcel_form";
 import Service_form from "./service_form";
 import Payment_form from "./payment_form";
 import { get, post } from "../../../../util/fetch";
-import { Skeleton, Spin } from "antd";
+import { Spin } from "antd";
 import { SettingOutlined } from "@ant-design/icons";
+import ListSkeleton from "../../../../components/ListSkeleton";
 import { is } from "bluebird";
 
 const { Panel } = Collapse;
@@ -89,7 +92,6 @@ const genExtra = () => (
     }}
   />
 );
-
 const form_content = (parent) => {
   return [
     {
@@ -98,7 +100,8 @@ const form_content = (parent) => {
       Icon: <PersonTwoToneIcon />,
       form: (
         <Sender_address_form
-          onRef={parent.onRef}
+          onRef={parent.onRef1}
+          // ref={parent.sender_form_child}
           sender_default_nickname={parent.props.sender_information.nickname}
           profile="sender_information"
           reset_info={(step) => parent.reset_info(step)}
@@ -175,7 +178,6 @@ const Sender = () => (
     ></path>
   </svg>
 );
-
 const Recepiant = () => (
   <svg
     t="1578569888016"
@@ -194,7 +196,6 @@ const Recepiant = () => (
     ></path>
   </svg>
 );
-
 const MyFirstIcon = (props) => <Icon component={Sender} {...props} />;
 
 const RecepiantIcon = (props) => <Icon component={Recepiant} {...props} />;
@@ -216,11 +217,15 @@ const display_parcel_title = (data) => {
 class Information_page extends React.Component {
   constructor(props) {
     super(props);
+    // this.sender_form_child = React.createRef();
   }
-
-  onRef = (ref) => {
+  onRef1 = (ref) => {
     this.child1 = ref;
   };
+
+  // onRef1 = (ref) => {
+  //   this.child1 = ref;
+  // };
   onRef2 = (ref) => {
     this.child2 = ref;
   };
@@ -260,8 +265,6 @@ class Information_page extends React.Component {
     );
 
     this.child3.reset();
-
-    
   };
 
   delete_info_parcel = (id_no) => {
@@ -297,6 +300,53 @@ class Information_page extends React.Component {
       obj.panel_title = "请先完成输入信息";
     }
     return obj;
+  };
+
+  show_address_tag = (key) => {
+    let addressTag;
+    const antIcon = <LoadingOutlined style={{ fontSize: 14 }} spin />;
+    if (!this.props.receipant_information.is_ready) return undefined;
+    if (
+      key == "receipant_information" &&
+      this.props.receipant_information.panel_title != "编辑中"
+    ) {
+      if (
+        this.props.receipant_information.receipant_is_residential == "validaing"
+      ) {
+        addressTag = <Spin style={{ marginLeft: "6px" }} indicator={antIcon} />;
+      } else if (
+        this.props.receipant_information.receipant_is_residential == "invalid"
+      ) {
+        addressTag = (
+          <Tag style={{ marginLeft: "6px" }} color="red">
+            未识别
+          </Tag>
+        );
+      } else {
+        addressTag =
+          this.props.receipant_information.receipant_is_residential !=
+            undefined &&
+          this.props.receipant_information.receipant_is_residential !=
+            "auto" ? (
+            <Tag
+              style={{ marginLeft: "6px" }}
+              color={
+                this.props.receipant_information.receipant_is_residential ==
+                true
+                  ? "green"
+                  : "geekblue"
+              }
+            >
+              {this.props.receipant_information.receipant_is_residential ===
+              true
+                ? "住宅"
+                : "商业"}
+            </Tag>
+          ) : undefined;
+      }
+    }
+
+    return addressTag;
   };
 
   payment_panel_status = () => {
@@ -342,8 +392,9 @@ class Information_page extends React.Component {
 
   fetch_sender_address = async (is_reset = false) => {
     try {
+      //  console.log(this.child1)
       //预加载默认地址如果没有就
-      console.log(this.props.sender_information.is_require_fetch);
+      // console.log(this.props.sender_information.is_require_fetch);
       if (
         this.props.sender_information.panel_title == "未填写" &&
         this.props.sender_information.is_require_fetch
@@ -383,7 +434,12 @@ class Information_page extends React.Component {
             sender_state: state,
           };
 
-          this.child1.formSetFieldVaule({ ...obj.sender_information });
+          // this.sender_form_child.current.formSetFieldVaule({ ...obj.sender_information });
+          setTimeout(
+            () => this.child1.formSetFieldVaule({ ...obj.sender_information }),
+            500
+          );
+          // this.child1.formSetFieldVaule({ ...obj.sender_information });
           if (!is_reset) {
             obj["setting"] = {
               open_panel: ["receipant_information"],
@@ -405,9 +461,171 @@ class Information_page extends React.Component {
     }
   };
 
+  display_collpase = () => {
+    const is_all_set =
+      this.props.sender_information.is_ready &&
+      this.props.receipant_information.is_ready &&
+      this.props.parcel_information.is_ready;
+    const is_disable = (key) => {
+      if (key == "service_information") {
+        return !is_all_set;
+      }
+      if (key == "payment_information") {
+        return !this.props.service_information.is_select || !is_all_set;
+      }
+    };
+
+    // const is_all_set = true
+    const getStyle = (key) => {
+      if (
+        key == "parcel_information" ||
+        key == "service_information" ||
+        key == "payment_information"
+      ) {
+        return {
+          border: "0px",
+          padding: "0px 16px 16px 16px",
+        };
+      } else {
+        return {
+          border: "0px",
+          padding: "0px 16px 16px 16px",
+        };
+      }
+    };
+    return (
+      <Collapse
+        accordion
+        expandIcon={({ isActive }) => (
+          <span>
+            <CaretRightOutlined rotate={isActive ? 90 : 0} />
+          </span>
+        )}
+        destroyInactivePanel={true}
+        style={{ borderRadius: "8px", background: "#f0f5ff" }}
+        // style={{   background: '#fff', }}
+        bordered={false}
+        expandIconPosition="left"
+        activeKey={this.props.setting.open_panel}
+        // activeKey={this.state.setting.open_panel}
+        // defaultActiveKey={this.props.setting.open_panel}
+        onChange={(e) => {
+          // console.log(e)
+          let obj = { setting: {} };
+          obj["setting"]["open_panel"] = [];
+          obj["setting"]["open_panel"].push(e);
+          // this.setState({ ...obj })
+          this.props.update_form_info(obj);
+        }}
+        // ghost
+      >
+        {form_content(this)
+          .filter(
+            (e) =>
+              this.props.billing_type == "prepaid" &&
+              e.key != "payment_information"
+          )
+          .map((item, index) => (
+            <Panel
+              // hidden={this.props.billing_type == "prepaid" && item.key == 'payment_information'}
+              forceRender={item.key != "service_information"}
+              // collapsible ={
+              //   item.key == "parcel_information" && this.state.setting_visible
+              //     ? "header"
+              //     : is_disable(item.key)
+              //     ? "header"
+              //     : "false"
+              // }
+              disabled={
+                item.key == "parcel_information" && this.state.setting_visible
+                  ? true
+                  : is_disable(item.key)
+                  ? true
+                  : false
+              }
+              style={{
+                borderRadius: "3px",
+                boxShadow: "rgb(217, 217, 217) 1px 1px 7px 0px",
+                // boxShadow: '0px 3px 6px -4px rgba(0,0,0,0.12)',
+                // boxShadow: '0px -3px 6px -4px rgba(0, 0, 0, 0.12)',
+                background: "#fff",
+                marginBottom: 12,
+                // border: "1px",
+                // background: '#F8F8F8',
+                overflow: "hidden",
+                // padding:0
+                border: "0px",
+                // border:"1px solid #d9d9d9",
+              }}
+              header={
+                // <span>123</span>
+                // <div  style={{  display: "inline",}}>123</div>
+                <div style={{ display: "inline" }}>
+                  <div
+                    style={{
+                      display: "inline",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Steps
+                      style={{ display: "inline" }}
+                      size="small"
+                      status="wait"
+                      initial={0}
+                    >
+                      <Step
+                        status={is_disable(item.key) ? "wait" : "process"}
+                        icon={item.Icon}
+                        title={
+                          <span style={{ fontSize: "17px", fontWeight: 500 }}>
+                            {" "}
+                            {item.label}
+                            <span>
+                              <Text
+                                disabled={is_disable(item.key) ? true : false}
+                                style={{
+                                  marginLeft: 12,
+                                  fontSize: "12px",
+                                  fontWeight: 500,
+                                }}
+                                // strong
+                                // keyboard
+                                type={
+                                  this.get_panel_status(item.key)["font_type"]
+                                }
+                                // strong = {item.key == 'service_information'? is_all_set == true : this.props[`${item.key}`]['font_type'] == 'strong'}
+                                // strong
+                              >
+                                {this.get_panel_status(item.key)["panel_title"]}
+                              </Text>
+                            </span>
+                            {this.show_address_tag(item.key)}
+                          </span>
+                        }
+                      />
+                    </Steps>
+                  </div>
+                  <Divider
+                    hidden={!this.props.setting.open_panel.includes(item.key)}
+                    style={{ marginTop: 2, marginBottom: 1 }}
+                  />
+                </div>
+              }
+              showArrow={true}
+              // extra={genExtra()}
+              key={item.key}
+            >
+              <div style={getStyle(item.key)}>{item.form}</div>
+            </Panel>
+          ))}
+      </Collapse>
+    );
+  };
+
   componentDidMount = async () => {
     this.props.onRef(this);
     await this.fetch_sender_address();
+    // setTimeout(async() => await this.fetch_sender_address(), 500);
   };
 
   // componentDidUpdate = async (prevProps) => {
@@ -433,143 +651,26 @@ class Information_page extends React.Component {
   render() {
     // console.log(this.state.setting.open_panel)
     // console.log('infomation step did renedered')
-    const is_disable = (key) => {
-      if (key == "service_information") {
-        return !is_all_set;
-      }
-      if (key == "payment_information") {
-        return !this.props.service_information.is_select || !is_all_set;
-      }
 
-      // (key == 'service_information' ||  ( key == 'payment_information' && this.props.service_information.is_select) && !is_all_set)
-    };
-
-    // const is_avaiable = (key) => (key == 'service_information' ||  key == 'payment_information') && !is_all_set
-    const is_all_set =
-      this.props.sender_information.is_ready &&
-      this.props.receipant_information.is_ready &&
-      this.props.parcel_information.is_ready;
-    // const is_all_set = true
-    const getStyle = (key) => {
-      if (
-        key == "parcel_information" ||
-        key == "service_information" ||
-        key == "payment_information"
-      ) {
-        return {
-          border: "0px",
-          padding: "0px 16px 16px 16px",
-        };
-      } else {
-        return {
-          border: "0px",
-          padding: "0px 16px 16px 16px",
-        };
-      }
-    };
     return (
-      <Spin spinning={this.state.isfetching} size="large">
-        <Collapse
-          accordion
-          expandIcon={({ isActive }) => (
-            <span>
-              <CaretRightOutlined rotate={isActive ? 90 : 0} />
-            </span>
-          )}
-          destroyInactivePanel={true}
-          style={{ borderRadius: "8px", background: "#f0f5ff" }}
-          // style={{   background: '#fff', }}
-          bordered={false}
-          expandIconPosition="left"
-          activeKey={this.props.setting.open_panel}
-          // activeKey={this.state.setting.open_panel}
-          // defaultActiveKey={this.props.setting.open_panel}
-          onChange={(e) => {
-            // console.log(e)
-            let obj = { setting: {} };
-            obj["setting"]["open_panel"] = [];
-            obj["setting"]["open_panel"].push(e);
-            // this.setState({ ...obj })
-            this.props.update_form_info(obj);
-          }}
-          ghost
-        >
-          {form_content(this).map((item, index) => (
-            <Panel
-              forceRender={item.key != "service_information"}
-              disabled={
-                item.key == "parcel_information" && this.state.setting_visible
-                  ? true
-                  : is_disable(item.key)
-                  ? true
-                  : false
-              }
-              style={{
-                borderRadius: "3px",
-                boxShadow: "rgb(217, 217, 217) 1px 1px 7px 0px",
-                // boxShadow: '0px 3px 6px -4px rgba(0,0,0,0.12)',
-                // boxShadow: '0px -3px 6px -4px rgba(0, 0, 0, 0.12)',
-                background: "#fff",
-                marginBottom: 12,
-                // border: "1px",
-                // background: '#F8F8F8',
-                overflow: "hidden",
-                // padding:0
-                border: "0px",
-                // border:"1px solid #d9d9d9",
-              }}
-              header={
-                <div>
-                  <div
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <Steps size="small" status="wait" initial={0}>
-                      <Step
-                        status={is_disable(item.key) ? "wait" : "process"}
-                        icon={item.Icon}
-                        title={
-                          <span style={{ fontSize: "17px", fontWeight: 500 }}>
-                            {" "}
-                            {item.label}
-                            <span>
-                              <Text
-                                disabled={is_disable(item.key) ? true : false}
-                                style={{
-                                  marginLeft: 12,
-                                  fontSize: "12px",
-                                  fontWeight: 500,
-                                }}
-                                strong
-                                // keyboard
-                                type={
-                                  this.get_panel_status(item.key)["font_type"]
-                                }
-                                // strong = {item.key == 'service_information'? is_all_set == true : this.props[`${item.key}`]['font_type'] == 'strong'}
-                                // strong
-                              >
-                                {this.get_panel_status(item.key)["panel_title"]}
-                              </Text>
-                            </span>
-                          </span>
-                        }
-                      />
-                    </Steps>
-                  </div>
-                  <Divider
-                    hidden={!this.props.setting.open_panel.includes(item.key)}
-                    style={{ marginTop: 2, marginBottom: 1 }}
-                  />
-                </div>
-              }
-              showArrow={true}
-              // extra={genExtra()}
-              key={item.key}
-            >
-              <div style={getStyle(item.key)}>{item.form}</div>
-            </Panel>
-          ))}
-        </Collapse>
-      </Spin>
+      <div>
+        {this.state.isfetching ? (
+          <div style={{ background: "#f0f5ff" }}>
+            <ListSkeleton></ListSkeleton>
+            <ListSkeleton></ListSkeleton>
+            <ListSkeleton></ListSkeleton>
+            <ListSkeleton></ListSkeleton>
+          </div>
+        ) : (
+          this.display_collpase()
+        )}
+        {/* <div style={{ background: "#f0f5ff" }}>
+          <ListSkeleton></ListSkeleton>
+          <ListSkeleton></ListSkeleton>
+          <ListSkeleton></ListSkeleton>
+          <ListSkeleton></ListSkeleton>
+        </div> */}
+      </div>
     );
   }
 }
@@ -578,6 +679,7 @@ function mapStateToProps(state) {
   // console.log(state.shipping_platform_single_order.form)
   return {
     // form: state.shipping_platform_single_order.form,
+    billing_type: state.shipping_platform_user.account.user_info.billing_type,
     sender_information:
       state.shipping_platform_single_order.form.sender_information,
     receipant_information:
