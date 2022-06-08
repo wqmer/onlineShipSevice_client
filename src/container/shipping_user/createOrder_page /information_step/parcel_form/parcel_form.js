@@ -13,6 +13,8 @@ import {
   Collapse,
   Steps,
   Divider,
+  Space,
+  message,
 } from "antd";
 import React, { Component } from "react";
 import {
@@ -34,17 +36,100 @@ import {
   CaretRightOutlined,
   DoubleRightOutlined,
   RightOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import { actions as single_order_form } from "../../../../../reducers/shipping_platform/single_order_form";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 import { ItemMeta } from "semantic-ui-react";
+import FedExIcon from "../../../../../components/CustomIcon/FedEx";
+import UpsIcon from "../../../../../components/CustomIcon/Ups";
 const uid = new ShortUniqueId();
 
 const { Panel } = Collapse;
 const { Text } = Typography;
 const { Title } = Typography;
 const plainOptions = ["lb/in", "oz/in", "kg/cm"];
+const PackageType = [
+  {
+    carrier: "fedex",
+    pack_type: "FedEx Envelope",
+    label: "FedEx Envelope",
+    size: '9-1/2" x 12-1/2"',
+    info: {
+      PackagingType: "FEDEX_ENVELOPE",
+      in: {
+        length: "10",
+        width: "13",
+        height: "1",
+      },
+      cm: {
+        length: "24.13",
+        width: "31.75",
+        height: "1",
+      },
+    },
+  },
+  {
+    carrier: "fedex",
+    pack_type: "FedEx Pak",
+    label: "FedEx Pak",
+    size: '12" x 15-1/2"',
+    info: {
+      PackagingType: "FEDEX_PAK",
+      in: {
+        length: "12",
+        width: "14",
+        height: "1",
+      },
+      cm: {
+        length: "30.48",
+        width: "39.37",
+        height: "2",
+      },
+    },
+  },
+
+  {
+    carrier: "ups",
+    pack_type: "UPS Letter",
+    label: "UPS Letter",
+    size: '9-1/2" x 12-1/2"',
+    info: {
+      PackagingType: "UPS_LETTER",
+      in: {
+        length: "9.5",
+        width: "12.25",
+        height: "1",
+      },
+      cm: {
+        length: "24.13",
+        width: "38",
+        height: "1",
+      },
+    },
+  },
+
+  {
+    carrier: "ups",
+    pack_type: "UPS Pak",
+    label: "UPS Pak",
+    size: '12.75" x 16"',
+    info: {
+      PackagingType: "UPS_PAK",
+      in: {
+        length: "13",
+        width: "16",
+        height: "1",
+      },
+      cm: {
+        length: "32.5",
+        width: "40.08",
+        height: "2",
+      },
+    },
+  },
+];
 
 const selectAfterWeight = (
   <Select defaultValue="lb" style={{ width: 60 }}>
@@ -196,27 +281,190 @@ class Parcel_component extends React.Component {
   formRef = React.createRef();
   state = {
     title: this.props.title,
+    value: PackageType.find((e) => e.info.PackagingType == this.props.pack_type)
+      ? PackageType.find((e) => e.info.PackagingType == this.props.pack_type)
+          .pack_type
+      : undefined,
+    open: false,
+    // value: 'FedEx Envelope',
+    label: PackageType.find((e) => e.info.PackagingType == this.props.pack_type)
+      ? PackageType.find((e) => e.info.PackagingType == this.props.pack_type)
+          .pack_type
+      : undefined,
+  };
+
+  //自定义包裹
+  reset_package_form = (
+    value = undefined,
+    label = undefined,
+    ismessageOn = true,
+    reduxOn = true
+  ) => {
+    this.props.rest_sev_pay_form();
+
+    this.formRef.current.setFieldsValue({
+      same_pack: 1,
+      weight: undefined,
+      length: undefined,
+      width: undefined,
+      height: undefined,
+      order_id: undefined,
+      reference_1: undefined,
+      reference_2: undefined,
+    });
+
+    let parcel_data = {
+      key: this.props.id_no,
+      panel_title: "编辑中",
+      font_type: "warning",
+      pack_info: {
+        pack_type: "YOUR_PACKAGING",
+        ...this.formRef.current.getFieldsValue(),
+        // ...data,
+      },
+    };
+    this.props.submit_info(parcel_data);
+    message.warning({ content: "已重置", key: "package", duration: 0.5 });
+    this.setState({
+      title: "编辑中",
+      value: "YOUR_PACKAGING",
+      label: "YOUR_PACKAGING",
+      open: false,
+    });
+
+    // current_form.setFieldsValue({ ...obj.receipant_information });
+    // if (ismessageOn)
+  };
+
+  //解决导致有label 的value值，在undefined情况下， 无法出现placeholder
+  getSelectValue = () => {
+    let value = this.state.value
+      ? this.state.value
+      : this.props.pack_type
+      ? this.props.pack_type
+      : undefined;
+    let label = this.state.label
+      ? this.state.label
+      : this.props.pack_type
+      ? this.props.pack_type
+      : undefined;
+    if (value == undefined && label == undefined) return undefined;
+    console.log("value" + value);
+    return {
+      value,
+      label,
+    };
+  };
+
+  //select 变化 ,选中包裹类型
+  handleChange = (value) => {
+    console.log("current length unit is " + this.props.unit_length);
+    this.props.rest_sev_pay_form();
+    let packType = PackageType.find((e) => e.pack_type == value.value);
+    let currentUnitLength = this.props.unit_length
+      ? this.props.unit_length
+      : "in";
+    this.formRef.current.setFieldsValue({
+      ...packType.info[currentUnitLength],
+    });
+
+    //触发验证
+    let parcel_data = {
+      key: this.props.id_no,
+      panel_title: undefined,
+      font_type: undefined,
+      pack_info: {
+        pack_type: packType.info.PackagingType,
+        ...this.formRef.current.getFieldsValue(),
+        // ...data,
+      },
+    };
+
+    parcel_data.panel_title = is_ready_form(
+      this.props.content,
+      this.formRef.current
+    )
+      ? `重量 ${parcel_data.pack_info.weight} ${this.props.unit_weight},  尺寸 ${parcel_data.pack_info.length}  x  ${parcel_data.pack_info.width}  x  ${parcel_data.pack_info.height} ${this.props.unit_length}`
+      : "编辑中";
+    parcel_data.font_type = is_ready_form(
+      this.props.content,
+      this.formRef.current
+    )
+      ? "strong"
+      : "warning";
+    // console.log(parcel_data);
+    this.setState({
+      title: parcel_data.panel_title,
+      value: packType.pack_type,
+      label: packType.label,
+    });
+    message.success({ content: "自动填充", key: "package", duration: 0.5 });
+
+    // console.log(parcel_data);
+    this.props.submit_info(parcel_data);
+    // console.log(this.formRef.current.getFieldsValue());
+
+    // message.success({ content: "自动填充", key: "package", duration: 0.5 });
+    // this.props.update_form_info(obj);
   };
 
   //每一个包裹完输入完毕后，递交到外层
-  onchange_data = (form, data, unit_length, unit_weight) => {
+  onchange_data = (
+    form,
+    data,
+    unit_length,
+    unit_weight,
+    isYourPack = false
+  ) => {
     //直接触发重置 付款 和渠道 panel
     //子panel tile 直接改为编辑中
+    // console.log("it toggoled by onchagne");
     this.props.rest_sev_pay_form();
+
     let parcel_data = {
       key: this.props.id_no,
       panel_title: undefined,
       font_type: undefined,
       pack_info: data,
     };
-    parcel_data.panel_title = "编辑中";
-    parcel_data.font_type = "warning";
 
+    //console.log("length field is changed ?" + form.isFieldTouched('length') );
+    //自定义包裹触发
+    if (isYourPack) {
+      this.setState({
+        value: "YOUR_PACKAGING",
+        label: "YOUR_PACKAGING",
+      });
+      parcel_data.pack_info.pack_type = "YOUR_PACKAGING";
+
+      if (is_ready_form(this.props.content, form)
+      ) {
+        this.props.submit_info(parcel_data);
+      }
+      // this.props.submit_info(parcel_data);
+      // if (
+      //   this.state.title != "编辑中" &&
+      //   !is_ready_form(this.props.content, form)
+      // ) {
+      //   parcel_data.panel_title = "编辑中";
+      //   parcel_data.font_type = "warning";
+      //   this.setState({
+      //     title: "编辑中",
+      //   });
+      //   this.props.submit_info(parcel_data);
+      // }
+    }
+
+    //更改后 如果包裹包裹不在编辑中，但是触发验证后转至编辑中状态
     if (
       this.state.title != "编辑中" &&
       !is_ready_form(this.props.content, form)
     ) {
-      this.setState({ title: "编辑中" });
+      parcel_data.panel_title = "编辑中";
+      parcel_data.font_type = "warning";
+      this.setState({
+        title: "编辑中",
+      });
       this.props.submit_info(parcel_data);
     }
   };
@@ -236,7 +484,7 @@ class Parcel_component extends React.Component {
       this.props.content,
       this.formRef.current
     )
-      ? `重量 ${parcel_data.pack_info.weight} ${this.props.unit_weight}，  尺寸 ${parcel_data.pack_info.length}  x  ${parcel_data.pack_info.width}  x  ${parcel_data.pack_info.height} ${this.props.unit_length}`
+      ? `重量 ${parcel_data.pack_info.weight} ${this.props.unit_weight},  尺寸 ${parcel_data.pack_info.length}  x  ${parcel_data.pack_info.width}  x  ${parcel_data.pack_info.height} ${this.props.unit_length}`
       : "编辑中";
     parcel_data.font_type = is_ready_form(
       this.props.content,
@@ -247,17 +495,6 @@ class Parcel_component extends React.Component {
     // console.log(parcel_data);
     this.setState({ title: parcel_data.panel_title });
     this.props.submit_info(parcel_data);
-  };
-  //   parcel_data.panel_title = is_ready_form(this.props.content, form)
-  //     ? `重量 ：${data.weight} ${unit_weight}，  尺寸 ： ${data.length}  x  ${data.width}  x  ${data.height} ${unit_length}`
-  //     : "编辑中";
-  //   parcel_data.font_type = is_ready_form(this.props.content, form)
-  //     ? "strong"
-  //     : "warning";
-  // };
-
-  onChangeUnit = () => {
-    console.log("unit changed");
   };
 
   componentWillReceiveProps = (nextProps) => {
@@ -300,6 +537,8 @@ class Parcel_component extends React.Component {
   };
 
   componentDidMount = () => {
+    console.log("title is " + this.props.title);
+    console.log("package_type is " + this.props.pack_type);
     if (this.props.id_no == "first_pak") this.props.onRef(this);
     console.log("i rendered");
   };
@@ -348,11 +587,10 @@ class Parcel_component extends React.Component {
                   包裹{" "}
                   {start_tag == end_tag
                     ? start_tag
-                    : `${start_tag} 至 ${end_tag}  ` }{" "}
-                   {" "}
+                    : `${start_tag} 至 ${end_tag}  `}{" "}
                 </Text>{" "}
                 <Text
-                  style={{ fontWeight: 500, fontSize: 11 , marginLeft:6}}
+                  style={{ fontWeight: 500, fontSize: 11, marginLeft: 6 }}
                   type={this.props.font_type}
                 >
                   {" "}
@@ -386,11 +624,113 @@ class Parcel_component extends React.Component {
             <div
               style={{ background: "#F8F8F8", padding: " 16px 32px 0px 32px" }}
             >
-              {/* <Select key={this.props.id_no} defaultValue="选择一个产品，或者添加新产品" style={{ marginBottom: 16, width: 300 }} >
-                                <Select.Option value="default">默认产品</Select.Option>
-                                <Select.Option value="product1">默认产品1</Select.Option>
-                                <Select.Option value="product2">默认产品2</Select.Option>
-                            </Select> */}
+              <Select
+                showSearch
+                value={this.getSelectValue()}
+                labelInValue={true}
+                key={this.props.id_no}
+                onChange={this.handleChange}
+                open={this.state.open}
+                placeholder="选择或者搜索包裹类型"
+                style={{ marginBottom: 24, width: 480 }}
+                onDropdownVisibleChange={async (open) => {
+                  let current = this.state.open;
+                  try {
+                    this.setState({
+                      open: !current,
+                    });
+                    // if (current == false) {
+                    //   this.setState({
+                    //     open: !current,
+                    //   });
+                    // } else {
+                    //   this.setState({ open: !current });
+                    // }
+                  } catch (error) {
+                    console.log(error);
+                  }
+
+                  // else { this.setState({ open: !current }) }
+                  // console.log(result)
+                }}
+                dropdownRender={(menu) => (
+                  <div>
+                    {menu}
+                    <Divider style={{ margin: "4px 0" }} />
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "nowrap",
+                        padding: 8,
+                      }}
+                    >
+                      <a
+                        style={{
+                          flex: "none",
+                          padding: "4px",
+                          display: "block",
+                          cursor: "pointer",
+                        }}
+                        onClick={this.reset_package_form}
+                      >
+                        <PlusOutlined />
+                        输入自定义包裹{" "}
+                      </a>
+                    </div>
+                  </div>
+                )}
+              >
+                {/* <Select.Option value="default">默认尺寸1</Select.Option>
+                <Select.Option value="product1">默认尺寸2</Select.Option>
+                <Select.Option value="product2">默认尺寸3</Select.Option> */}
+                {/* <Select.OptGroup
+                  key="your_packaging"
+                  label="预存"
+                ></Select.OptGroup> */}
+                <Select.OptGroup
+                  key="FEDEX"
+                  label={<FedExIcon style={{ fontSize: "16px" }} />}
+                >
+                  {PackageType.filter((e) => e.carrier == "fedex").map(
+                    (item, index) => (
+                      <Select.Option
+                        key={item.pack_type}
+                        value={item.pack_type}
+                      >
+                        {" "}
+                        {/* <Space > */} {/* {item.icon} */}
+                        {item.pack_type}
+                        <span style={{ fontSize: 12, marginLeft: 25 }}>
+                          <Text type="secondary">{item.size}</Text>
+                        </span>
+                        {/* </Space> */}
+                      </Select.Option>
+                    )
+                  )}
+                </Select.OptGroup>
+
+                <Select.OptGroup
+                  key="UPS"
+                  label={<UpsIcon style={{ fontSize: "16px" }} />}
+                >
+                  {PackageType.filter((e) => e.carrier == "ups").map(
+                    (item, index) => (
+                      <Select.Option
+                        key={item.pack_type}
+                        value={item.pack_type}
+                      >
+                        {" "}
+                        {/* <Space > */} {/* {item.icon} */}
+                        {item.pack_type}
+                        <span style={{ fontSize: 12, marginLeft: 25 }}>
+                          <Text type="secondary">{item.size}</Text>
+                        </span>
+                        {/* </Space> */}
+                      </Select.Option>
+                    )
+                  )}
+                </Select.OptGroup>
+              </Select>
               {/* <Parcel_form
                 parcel={this.props.data}
                 asset={this.props.content}
@@ -401,13 +741,31 @@ class Parcel_component extends React.Component {
                 ref={this.formRef}
                 layout="vertical"
                 // form={form}
+                // onValuesChange={(changedValues, allValues) => {
+                //   if (
+                //     ["width", "length", "height"].includes(
+                //       Object.keys(changedValues)[0]
+                //     )
+                //   )
+                //     this.onchange_data(
+                //       this.formRef.current,
+                //       this.formRef.current.getFieldsValue(),
+                //       this.props.unit_length,
+                //       this.props.unit_weight,
+                //       true
+                //     );
+                // }}
                 onFieldsChange={(changedFields, allFields) => {
-                  // this.props.onChangeValue(changedFields)
+                  console.log(changedFields);
+                  let isYourPak = ["width", "length", "height"].includes(
+                    changedFields[0].name[0]
+                  );
                   this.onchange_data(
                     this.formRef.current,
                     this.formRef.current.getFieldsValue(),
                     this.props.unit_length,
-                    this.props.unit_weight
+                    this.props.unit_weight,
+                    isYourPak
                   );
                 }}
               >

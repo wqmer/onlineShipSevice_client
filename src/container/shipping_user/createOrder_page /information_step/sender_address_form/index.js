@@ -122,8 +122,9 @@ const sender_content = {
       message: undefined,
       placehold: "选择州",
       span_value: 4,
-      type: "select",
-      rule: [{ required: true }, { type: "string" }],
+      type: "input",
+      rule: [{ required: true }, { type: "string" }, { max: 2 }],
+
     },
   ],
 

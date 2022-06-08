@@ -63,7 +63,7 @@ const OrderDetail = (props) => (
             style={{ fontSize: item.label == "总费用" ? 16 : undefined }}
             // type={item.label == "总费用" ?undefined :'secondary'}
           >
-            {item.content == undefined ? "N/A" : item.content}{" "}
+          {item.content == undefined ? "N/A" : item.content }{" "}
           </Text>
         )}
         {/* <Text type="secondary"> {item.content == undefined ? 'N/A' :    item.content} </Text> */}

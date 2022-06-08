@@ -2,6 +2,8 @@ import {
   PrinterOutlined,
   RollbackOutlined,
   SmileTwoTone,
+  FileTextTwoTone,
+  FilePdfOutlined,
 } from "@ant-design/icons";
 import {
   Skeleton,
@@ -12,6 +14,9 @@ import {
   Col,
   Avatar,
   Typography,
+  Popover,
+  List,
+  Divider,
 } from "antd";
 import React, { Component } from "react";
 import {
@@ -22,6 +27,7 @@ import {
   Link,
   NavLink,
 } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import ReactToPrint from "react-to-print";
 import ReactPDF, {
   Canvas,
@@ -31,16 +37,22 @@ import ReactPDF, {
   Page,
   View,
   StyleSheet,
+  PDFDownloadLink,
 } from "@react-pdf/renderer";
 import LabelGallery from "../../../components/Labelgallery";
 import OrderDetial from "../../../components/OrderDetail";
 import { get } from "../../../util/fetch";
 import { get_address_title } from "../../../util/address";
+import {
+  handle_surcharge,
+  handle_total_charge,
+  handle_ups_extra_surcharge,
+} from "../../../util/carrier";
 const { Text } = Typography;
 const styles = StyleSheet.create({
   page: {
-    // clipPath: "inset(10% 0% 0% 0%)",
-    // flexDirection: 'row',
+    clipPath: "inset(10% 0% 0% 0%)",
+    flexDirection: "row",
   },
   body: {
     // padding: 0,
@@ -57,12 +69,12 @@ const styles = StyleSheet.create({
     // padding: 5,
   },
   image: {
-    height: 600,
+    // height: 600,
     // clipPath: "inset(15 0% 0% 0%)"
     // transform: "rotate(90deg)",
     // clipPath: "inset(0% 0% 0% 0%)"
-    // height: 600,
-    // width:1000,
+    height: 600,
+    width: 400,
     // minWidth: 525,
     // boxShadow: "0px 3px 6px 0px rgba(0, 0, 0, 0.12)",
     // marginRight: "25%",
@@ -105,6 +117,18 @@ for (let i = 0; i <= 2; i++) {
   arrayLabel.push(label);
 }
 
+const MyDoc = (props) => (
+  <Document>
+    <Page size={[400, 600]}>
+      {props.labels.map((e) => (
+        <View key={e.key} style={styles.view}>
+          <Image key={e.key} style={styles.image} src={e.url} />
+        </View>
+      ))}
+    </Page>
+  </Document>
+);
+
 class ComponentToPrint extends React.Component {
   constructor(props) {
     super(props);
@@ -124,6 +148,53 @@ class ComponentToPrint extends React.Component {
   }
 }
 
+class PDFlink extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  state = { loading: false, disabled: false };
+
+  render() {
+    return (
+      <div>
+        <PDFDownloadLink
+          document={<MyDoc labels={this.props.labels} />}
+          fileName={`${
+            this.props.labels[0] ? this.props.labels[0].key : "unknown"
+          }.pdf`}
+        >
+          {({ blob, url, loading, error }) =>
+            loading ? (
+              "Loading document..."
+            ) : (
+              <Button
+                style={{
+                  borderRadius: "3px",
+                  boxShadow: "rgb(204, 204, 204) 0px 0px 10px",
+                }}
+                loading={this.state.loading}
+                icon={<FilePdfOutlined />}
+                type="primary"
+                key="console"
+                disabled={this.state.disabled}
+                onClick={() => {
+                  this.setState({ loading: true, disabled: true });
+                  setTimeout(() => {
+                    this.setState({ loading: false, disabled: false });
+                  }, 1000);
+                }}
+              >
+                PDF下载
+              </Button>
+            )
+          }
+        </PDFDownloadLink>
+      </div>
+    );
+  }
+}
+
 class DetailPage extends React.Component {
   constructor(props) {
     super(props);
@@ -133,6 +204,7 @@ class DetailPage extends React.Component {
     resetType: "default",
     loading: false,
     fetching: true,
+    fetch_data: "123",
     currentTrackingNumbers: undefined,
     service_information: [
       {
@@ -265,7 +337,7 @@ class DetailPage extends React.Component {
           />
         </div>
 
-        <Row align="bottom" justify="space-between">
+        <Row justify="space-between" align="bottom">
           <Col>
             <Space size={12}>
               <ReactToPrint
@@ -289,20 +361,31 @@ class DetailPage extends React.Component {
                 )}
                 content={() => this.componentRef}
               />
-              <Button
-                style={{
-                  borderRadius: "3px",
-                }}
-                disabled
-                type="primary"
-                icon={<RollbackOutlined />}
-                onClick={() => {
-                  console.log(123);
-                }}
-                key="buy"
+              <PDFlink labels={labels} />
+              <Link
+                to={{ pathname: `/user/create/single_order` }}
+                // params={{ test: "hello" }}
               >
-                创建相同
-              </Button>
+                <Button
+                  style={{
+                    borderRadius: "3px",
+                  }}
+                  // disabled
+                  type="primary"
+                  icon={<RollbackOutlined />}
+                  onClick={() => {
+                    localStorage.setItem(
+                      "repeat_order",
+                      JSON.stringify({
+                        data: this.state.fetch_data,
+                      })
+                    );
+                  }}
+                  key="buy"
+                >
+                  创建相同
+                </Button>
+              </Link>
               <Button
                 style={{
                   borderRadius: "3px",
@@ -320,8 +403,10 @@ class DetailPage extends React.Component {
               </Button>
             </Space>
           </Col>
-          <Col style={{ textAlign: "left" }}>
-            {/* <Button
+
+          {/* <Col> */}
+
+          {/* <Button
               style={{
                 borderRadius: "3px",
                 textAlign: "left",
@@ -333,7 +418,7 @@ class DetailPage extends React.Component {
                 返回前页
               </Text>
             </Button> */}
-          </Col>
+          {/* </Col> */}
         </Row>
       </div>
     );
@@ -356,10 +441,87 @@ class DetailPage extends React.Component {
     // let result = await get(`user/get_order/${this.props.match.params.id}`);
     let result = await get(`user/get_order/${this.props.tracking}`);
     // console.log(result);
+    this.setState({ fetch_data: result.data });
     let labels;
     let parcel_information;
     let service_information;
     let tracking_information;
+    //only show detial for one package shipment
+    let billingDetailPackages =
+      result.data.parcel.parcelList[0].postage.billing_amount;
+    // for ups charge display
+    let billingSurchargeExtra =
+      result.data.service.carrier_type == "UPS"
+        ? result.data.postage.billing_amount.total_surcharge
+        : undefined;
+    let surCharges = billingDetailPackages.surCharges;
+
+    //fix if surcharges is object only
+
+    Array.isArray(surCharges) ? undefined : (surCharges = [surCharges]);
+
+    surCharges = billingSurchargeExtra
+      ? surCharges.concat(billingSurchargeExtra)
+      : surCharges;
+    let surchargeDetial = (
+      <Row gutter={[24, 2]}>
+        <Col span={24}>
+          {" "}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              基础
+            </Text>
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              $ {billingDetailPackages.baseCharges}
+            </Text>
+          </div>
+          <Divider style={{ marginTop: 2, marginBottom: 2 }} dashed />
+        </Col>
+
+        {Array.isArray(surCharges)
+          ? surCharges.length > 0
+            ? surCharges.map((e, index) => (
+                <Col key={index + "1"} span={24}>
+                  {" "}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    {" "}
+                    <Text type="secondary" style={{ fontSize: 11 }}>
+                      {
+                        handle_surcharge(result.data.service.carrier_type, e)
+                          .name
+                      }
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: 11 }}>
+                      ${" "}
+                      {
+                        handle_surcharge(result.data.service.carrier_type, e)
+                          .amount
+                      }
+                    </Text>
+                  </div>
+                  <Divider
+                    style={{
+                      marginTop: 2,
+                      marginBottom: 2,
+                    }}
+                    dashed
+                  />
+                </Col>
+              ))
+            : undefined
+          : undefined}
+      </Row>
+    );
 
     if (result.code == 0) {
       labels = result.data.parcel.parcelList.map((item) => {
@@ -428,7 +590,51 @@ class DetailPage extends React.Component {
 
         {
           label: "总费用",
-          content: result.data.postage.billing_amount.total,
+          content: (
+            <span>
+              {" "}
+              $
+              {parseFloat(result.data.postage.billing_amount.original_charge) >
+              parseFloat(result.data.postage.billing_amount.total) ? (
+                <span>
+                  {" "}
+                  <Text strong>
+                    {" "}
+                    {result.data.postage.billing_amount.total}
+                  </Text>
+                  <Text delete style={{ fontSize: 12, marginLeft: 4 }}>
+                    {" "}
+                    {result.data.postage.billing_amount.original_charge}
+                  </Text>
+                </span>
+              ) : (
+                <Text strong> {result.data.postage.billing_amount.total}</Text>
+              )}{" "}
+              {Array.isArray(result.data.parcel.parcelList) ? (
+                result.data.parcel.parcelList.length == 1 ? (
+                  <Popover
+                    overlayInnerStyle={{
+                      width: 300,
+                      height: 125,
+                      overflow: "auto",
+                    }}
+                    placement="rightTop"
+                    arrowPointAtCenter
+                    content={<div>{surchargeDetial}</div>}
+                    // trigger="click"
+                    // title="Title"
+                  >
+                    <FileTextTwoTone style={{ fontSize: 12, marginLeft: 6 }} />
+                  </Popover>
+                ) : (
+                  <FileTextTwoTone
+                    twoToneColor="#d9d9d9"
+                    style={{ fontSize: 12, marginLeft: 6 }}
+                  />
+                )
+              ) : undefined}
+            </span>
+          ),
           span: 3,
         },
       ];

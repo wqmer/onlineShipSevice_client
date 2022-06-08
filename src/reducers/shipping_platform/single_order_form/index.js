@@ -24,7 +24,9 @@ const initialState = {
         key: "first_pak",
         panel_title: "未录入",
         font_type: "warning",
+
         pack_info: {
+          pack_type: undefined,
           same_pack: 1,
         },
         is_panel_opened: true,

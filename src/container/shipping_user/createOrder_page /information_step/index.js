@@ -234,6 +234,7 @@ class Information_page extends React.Component {
   };
 
   state = {
+    isRepeat: true,
     isfetching: true,
     setting: { ...this.props.setting },
     setting_visible: false,
@@ -383,6 +384,9 @@ class Information_page extends React.Component {
     return this.props[`${key}`];
   };
 
+  test = () => {
+    this.setState({ isRepeat: true });
+  };
   is_all_set = () =>
     this.props.sender_information.is_ready &&
     this.props.receipant_information.is_ready &&
@@ -395,9 +399,11 @@ class Information_page extends React.Component {
       //  console.log(this.child1)
       //预加载默认地址如果没有就
       // console.log(this.props.sender_information.is_require_fetch);
+      let isRepeat = localStorage.getItem("repeat_order") ? true : false;
       if (
         this.props.sender_information.panel_title == "未填写" &&
-        this.props.sender_information.is_require_fetch
+        this.props.sender_information.is_require_fetch &&
+        !isRepeat
       ) {
         let result = await post("/user/get_address", { type: "default" });
         if (result.data.docs.length != 0) {
@@ -442,8 +448,9 @@ class Information_page extends React.Component {
           // this.child1.formSetFieldVaule({ ...obj.sender_information });
           if (!is_reset) {
             obj["setting"] = {
-              open_panel: ["receipant_information"],
+              open_panel: isRepeat ? [] : ["receipant_information"],
             };
+
             this.props.get_form_info(obj);
           } else {
             obj["setting"] = {
@@ -453,6 +460,9 @@ class Information_page extends React.Component {
           }
         }
       }
+
+      setTimeout(() => localStorage.clear(), 1000);
+
       this.props.get_form_info();
     } catch (error) {
       console.log(error);
@@ -624,6 +634,7 @@ class Information_page extends React.Component {
 
   componentDidMount = async () => {
     this.props.onRef(this);
+    // console.log("repeat is " + this.props.isRepeat);
     await this.fetch_sender_address();
     // setTimeout(async() => await this.fetch_sender_address(), 500);
   };

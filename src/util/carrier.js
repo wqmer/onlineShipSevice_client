@@ -19,7 +19,7 @@ export const handle_surcharge = function (type, surChargeObj) {
         result.name = surchageName[surChargeObj.SurchargeType]
           ? surchageName[surChargeObj.SurchargeType]
           : surChargeObj.SurchargeType;
-        result.amount = surChargeObj.Amount.Amount;
+        result.amount = parseFloat(surChargeObj.Amount.Amount);
 
         break;
       case "UPS":
@@ -33,7 +33,7 @@ export const handle_surcharge = function (type, surChargeObj) {
         result.name = surchageCode[surChargeObj.Code]
           ? surchageCode[surChargeObj.Code]
           : "UPS附加费代码" + surChargeObj.Code;
-        result.amount = surChargeObj.MonetaryValue;
+        result.amount = parseFloat(surChargeObj.MonetaryValue);
         // code block
         break;
       default:

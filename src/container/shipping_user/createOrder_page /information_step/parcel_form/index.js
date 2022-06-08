@@ -145,7 +145,7 @@ const content = (parcel_form) => {
         message: undefined,
         placehold: "运单上自定义信息位置二，选填",
         span_value: 8,
-        rule: [{ required: false ,},{ max: 35 }],
+        rule: [{ required: false }, { max: 35 }],
         type: "input",
       },
       // { "label": 'sku', "key": "sku", "is_required": false, "message": undefined, "placehold": '产品的sku', "span_value": 9, type: 'input', },
@@ -388,7 +388,7 @@ class Parcel extends React.Component {
       new_unit_weight
     );
 
-    console.log(update_data);
+    // console.log(update_data);
 
     let obj = {
       parcel_information: {
@@ -502,6 +502,7 @@ class Parcel extends React.Component {
         parcel_list: update_data,
       },
     };
+    console.log(obj)
     obj["service_information"] = {};
     //递交到redux
     obj["service_information"]["is_required_fetch"] = true;
@@ -719,6 +720,7 @@ class Parcel extends React.Component {
                 //`key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop
                 title={item.panel_title}
                 font_type={item.font_type}
+                pack_type={item.pack_info.pack_type}
                 key={item.key}
                 id_no={item.key}
                 position={index}

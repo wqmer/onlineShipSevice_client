@@ -66,7 +66,8 @@ const nameMapCompoment = (props, item) => {
           ? props.receipant_information[item.key]
           : undefined
       }
-      validateTrigger={item.key == "receipant_state" ? undefined : ["onBlur"]}
+      validateTrigger={ ["onBlur"]}
+      // validateTrigger={item.key == "receipant_state" ? undefined : ["onBlur"]}
     >
       {form_item_content}
     </Form.Item>

@@ -22,6 +22,7 @@ import {
   Spin,
 } from "antd";
 import React, { Component } from "react";
+import ShortUniqueId from "short-unique-id";
 import {
   Redirect,
   Router,
@@ -29,12 +30,15 @@ import {
   Switch,
   Link,
   NavLink,
+  useLocation,
 } from "react-router-dom";
+import ReactDOM from "react-router";
 // import Address_form from './address_form'
 // import Parcel_form from './parcel_form'
 // import Carrier_form from './carrier_form'
 // import Finish_form from './finish_form'
 import Information from "./information_step";
+import _ from "lodash";
 import Finish from "./finish_step";
 import LocalAtmOutlinedIcon from "@material-ui/icons/LocalAtmOutlined";
 import { get, post } from "../../../util/fetch";
@@ -43,6 +47,7 @@ import {
   handle_total_charge,
   handle_ups_extra_surcharge,
 } from "../../../util/carrier";
+
 import { actions as single_order_form } from "../../../reducers/shipping_platform/single_order_form";
 import { actions as user_account_actions } from "../../../reducers/shipping_platform/user";
 import { connect } from "react-redux";
@@ -51,6 +56,118 @@ import { bindActionCreators } from "redux";
 const { Panel } = Collapse;
 const { Text, Title } = Typography;
 const { Step } = Steps;
+const uid = new ShortUniqueId();
+
+const getFullAddressFormR = (data) => {
+  let radd_2 = data.receipant_add2 ? ", " + data.receipant_add2 + ", " : ", ";
+  let result =
+    data.receipant_name +
+    ", " +
+    data.receipant_add1 +
+    radd_2 +
+    data.receipant_city +
+    ", " +
+    data.receipant_state +
+    " " +
+    data.receipant_zip_code;
+  return result;
+};
+const getFullAddressFormS = (data) => {
+  let sadd_2 = data.sender_add2 ? ", " + data.sender_add2 + ", " : ", ";
+  let result =
+    data.sender_name +
+    ", " +
+    data.sender_add1 +
+    sadd_2 +
+    data.sender_city +
+    ", " +
+    data.sender_state +
+    " " +
+    data.sender_zip_code;
+  return result;
+};
+
+const merge_parcel_info = (data, unit_length = "inch", unit_weight = "lb") => {
+  // console.log(data);
+  // let { unit_length, unit_weight } = data;
+  let title = undefined;
+  let font_type = undefined;
+  let total_weight = 0;
+  let number_is_editing = 0;
+  let nubmer_is_finished = 0;
+
+  //判断一条记录里是否是多个包裹。
+
+  //判断总状态
+  let array_finished = data.filter(
+    (item) => item.panel_title != "编辑中" && item.panel_title != "未录入"
+  );
+  let array_unfinished = data.filter(
+    (item) => item.panel_title == "编辑中" || item.panel_title == "未录入"
+  );
+  // console.log(array_unfinished);
+  let is_ready = array_finished.length == data.length;
+
+  nubmer_is_finished = Math.ceil(
+    array_finished.reduce((accumulator, currentValue) => {
+      // console.log(Number(currentValue.pack_info.weight))
+      return accumulator + Number(currentValue.pack_info.same_pack);
+    }, 0)
+  );
+
+  number_is_editing = Math.ceil(
+    array_unfinished.reduce((accumulator, currentValue) => {
+      // console.log(Number(currentValue.pack_info.weight))
+      return accumulator + Number(currentValue.pack_info.same_pack);
+    }, 0)
+  );
+  //计算总重量 放在 title
+  if (array_finished.length > 0) {
+    total_weight = array_finished.reduce((accumulator, currentValue) => {
+      // console.log(Number(currentValue.pack_info.weight))
+      return (
+        accumulator +
+        Number(currentValue.pack_info.weight * currentValue.pack_info.same_pack)
+      );
+    }, 0);
+  }
+
+  //如果只有一个包裹时，或者一条记录
+  if (array_unfinished.length + array_finished.length == 1) {
+    //判断是否完成，设置title
+    title =
+      array_finished.length == 1
+        ? `已输入 ${Math.ceil(
+            1 * array_finished[0].pack_info.same_pack
+          )} 个包裹，重量 ${parseFloat(total_weight).toFixed(
+            2
+          )}  ${unit_weight} , 每个尺寸 ${data[0].pack_info.length} x ${
+            data[0].pack_info.width
+          } x ${data[0].pack_info.height} ${unit_length} `
+        : `${
+            Math.ceil(1 * array_unfinished[0].pack_info.same_pack) < 0
+              ? 1
+              : Math.ceil(1 * array_unfinished[0].pack_info.same_pack)
+          } 个包裹正在编辑`;
+  } else {
+    //如果是多个包裹，判断是否都完成，设置title
+    title =
+      array_unfinished.length == 0
+        ? `已输入 ${nubmer_is_finished} 个包裹，总重量 ${parseFloat(
+            total_weight
+          ).toFixed(2)} ${unit_weight}`
+        : `已输入 ${nubmer_is_finished} 个包裹，总重量 ${parseFloat(
+            total_weight
+          ).toFixed(2)} ${unit_weight} ，${number_is_editing}个正在编辑`;
+  }
+
+  font_type = array_unfinished.length > 0 ? "warning" : "strong";
+  return {
+    title,
+    font_type,
+    is_ready,
+  };
+};
 
 const Sender = () => (
   <svg
@@ -110,6 +227,7 @@ class Create_order_page extends React.Component {
   };
 
   state = {
+    // isRepeat: ,
     isRequriedFetchAddress: false,
     step_status: undefined,
     current: 0,
@@ -323,6 +441,7 @@ class Create_order_page extends React.Component {
       case "information":
         return (
           <Information
+            isRepeat={this.state.isRepeat}
             isRequriedFetchAddress={this.state.isRequriedFetchAddress}
             postBill={(rate) => this.postBill(rate)}
             onRef={this.onRef}
@@ -382,7 +501,8 @@ class Create_order_page extends React.Component {
     let new_parcel_list = this.populatePack(
       this.props.form.parcel_information.parcel_list
     );
-    // console.log(new_parcel_list)
+    console.log(new_parcel_list);
+
     let update_form_information = {
       ...this.props.order_form,
       parcel_information: {
@@ -417,6 +537,89 @@ class Create_order_page extends React.Component {
       console.log(update_form);
       let response = await post("/user/create_shipment", update_form);
       // console.log(response);
+
+      //only show detial for one package shipment
+      let billingDetailPackages =
+        response.data.parcel.parcelList[0].postage.billing_amount;
+      // for ups charge display
+      let billingSurchargeExtra =
+        response.data.service.carrier_type == "UPS"
+          ? response.data.postage.billing_amount.total_surcharge
+          : undefined;
+      let surCharges = billingDetailPackages.surCharges;
+
+      //fix if surcharges is object only
+
+      Array.isArray(surCharges) ? undefined : (surCharges = [surCharges]);
+
+      surCharges = billingSurchargeExtra
+        ? surCharges.concat(billingSurchargeExtra)
+        : surCharges;
+
+      let surchargeDetial = (
+        <Row gutter={[24, 2]}>
+          <Col span={24}>
+            {" "}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                基础
+              </Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                $ {billingDetailPackages.baseCharges}
+              </Text>
+            </div>
+            <Divider style={{ marginTop: 2, marginBottom: 2 }} dashed />
+          </Col>
+
+          {Array.isArray(surCharges)
+            ? surCharges.length > 0
+              ? surCharges.map((e, index) => (
+                  <Col key={index + "1"} span={24}>
+                    {" "}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      {" "}
+                      <Text type="secondary" style={{ fontSize: 11 }}>
+                        {
+                          handle_surcharge(
+                            response.data.service.carrier_type,
+                            e
+                          ).name
+                        }
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: 11 }}>
+                        ${" "}
+                        {
+                          handle_surcharge(
+                            response.data.service.carrier_type,
+                            e
+                          ).amount
+                        }
+                      </Text>
+                    </div>
+                    <Divider
+                      style={{
+                        marginTop: 2,
+                        marginBottom: 2,
+                      }}
+                      dashed
+                    />
+                  </Col>
+                ))
+              : undefined
+            : undefined}
+        </Row>
+      );
+
       let labels = response.data.parcel.parcelList.map((item) => {
         return {
           type: response.data.service.carrier_type,
@@ -447,7 +650,56 @@ class Create_order_page extends React.Component {
 
         {
           label: "总费用",
-          content: "$ " + response.data.postage.billing_amount.total,
+          // content: "$ " + response.data.postage.billing_amount.total,
+          content: (
+            <span>
+              {" "}
+              $
+              {parseFloat(
+                response.data.postage.billing_amount.original_charge
+              ) > parseFloat(response.data.postage.billing_amount.total) ? (
+                <span>
+                  {" "}
+                  <Text strong>
+                    {" "}
+                    {response.data.postage.billing_amount.total}
+                  </Text>
+                  <Text delete style={{ fontSize: 12, marginLeft: 4 }}>
+                    {" "}
+                    {response.data.postage.billing_amount.original_charge}
+                  </Text>
+                </span>
+              ) : (
+                <Text strong>
+                  {" "}
+                  {response.data.postage.billing_amount.total}
+                </Text>
+              )}{" "}
+              {Array.isArray(response.data.parcel.parcelList) ? (
+                response.data.parcel.parcelList.length == 1 ? (
+                  <Popover
+                    overlayInnerStyle={{
+                      width: 300,
+                      height: 125,
+                      overflow: "auto",
+                    }}
+                    placement="rightTop"
+                    arrowPointAtCenter
+                    content={<div>{surchargeDetial}</div>}
+                    // trigger="click"
+                    // title="Title"
+                  >
+                    <FileTextTwoTone style={{ fontSize: 12, marginLeft: 6 }} />
+                  </Popover>
+                ) : (
+                  <FileTextTwoTone
+                    twoToneColor="#d9d9d9"
+                    style={{ fontSize: 12, marginLeft: 6 }}
+                  />
+                )
+              ) : undefined}
+            </span>
+          ),
           span: 3,
         },
       ];
@@ -544,8 +796,7 @@ class Create_order_page extends React.Component {
       message.error({
         content:
           error.response && error.response.data
-            ? error.response.data.message ||
-              "创建未成功，远程服务器报错"
+            ? error.response.data.message || "创建未成功，远程服务器报错"
             : "远程服务器没响应",
         key: "pay",
         duration: 5,
@@ -811,89 +1062,116 @@ class Create_order_page extends React.Component {
                   </Text>
                   <Divider type="vertical" />
                   <Text style={{ fontSize: 12 }}>费用 -</Text>
+                  {/* UPS basecharge handle */}
                   <Text strong style={{ fontSize: 16 }}>
-                    $ {item.price}
+                    ${" "}
+                    {carrier == "UPS"
+                      ? !Array.isArray(item.surCharges)
+                        ? 0
+                        : item.surCharges
+                            .map(
+                              (e, index) => handle_surcharge(carrier, e).amount
+                            )
+                            .reduce((p, c) => p + c, parseFloat(item.basePrice))
+                            .toFixed(2)
+                      : item.price}
                   </Text>
                   <span>
-                    <Popover
-                      overlayInnerStyle={{
-                        width: 240,
-                        height: 125,
-                        overflow: "auto",
-                      }}
-                      // overlayStyle={{ width: 150, height: 25 }}
-                      placement="rightBottom"
-                      // title={"detail"}
-                      content={
-                        <div>
-                          <Row gutter={[24, 2]}>
-                            <Col span={24}>
-                              {" "}
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                }}
-                              >
-                                <Text type="secondary" style={{ fontSize: 11 }}>
-                                  基础
-                                </Text>
-                                <Text type="secondary" style={{ fontSize: 11 }}>
-                                  $ {item.basePrice}
-                                </Text>
-                              </div>
-                              <Divider
-                                style={{ marginTop: 2, marginBottom: 2 }}
-                                dashed
-                              />
-                            </Col>
-
-                            {Array.isArray(item.surCharges)
-                              ? item.surCharges.length > 0
-                                ? item.surCharges.map((e, index) => (
-                                    <Col key={index + "1"} span={24}>
-                                      {" "}
-                                      <div
-                                        style={{
-                                          display: "flex",
-                                          justifyContent: "space-between",
-                                        }}
-                                      >
-                                        {" "}
-                                        <Text
-                                          type="secondary"
-                                          style={{ fontSize: 11 }}
-                                        >
-                                          {handle_surcharge(carrier, e).name}
-                                        </Text>
-                                        <Text
-                                          type="secondary"
-                                          style={{ fontSize: 11 }}
-                                        >
-                                          ${" "}
-                                          {handle_surcharge(carrier, e).amount}
-                                        </Text>
-                                      </div>
-                                      <Divider
-                                        style={{
-                                          marginTop: 2,
-                                          marginBottom: 2,
-                                        }}
-                                        dashed
-                                      />
-                                    </Col>
-                                  ))
-                                : undefined
-                              : undefined}
-                          </Row>
-                        </div>
-                      }
-                      trigger="hover"
-                    >
+                    {carrier == 1 ? (
                       <FileTextTwoTone
+                        twoToneColor="#d9d9d9"
                         style={{ fontSize: 11, marginLeft: 6 }}
                       />
-                    </Popover>
+                    ) : (
+                      <Popover
+                        overlayInnerStyle={{
+                          width: 240,
+                          height: 125,
+                          overflow: "auto",
+                        }}
+                        // overlayStyle={{ width: 150, height: 25 }}
+                        placement="rightBottom"
+                        // title={"detail"}
+                        content={
+                          <div>
+                            <Row gutter={[24, 2]}>
+                              <Col span={24}>
+                                {" "}
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                  }}
+                                >
+                                  <Text
+                                    type="secondary"
+                                    style={{ fontSize: 11 }}
+                                  >
+                                    基础
+                                  </Text>
+                                  <Text
+                                    type="secondary"
+                                    style={{ fontSize: 11 }}
+                                  >
+                                    $ {item.basePrice}
+                                  </Text>
+                                </div>
+                                <Divider
+                                  style={{ marginTop: 2, marginBottom: 2 }}
+                                  dashed
+                                />
+                              </Col>
+
+                              {Array.isArray(item.surCharges)
+                                ? item.surCharges.length > 0
+                                  ? item.surCharges.map((e, index) => (
+                                      <Col key={index + "1"} span={24}>
+                                        {" "}
+                                        <div
+                                          style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                          }}
+                                        >
+                                          {" "}
+                                          <Text
+                                            type="secondary"
+                                            style={{ fontSize: 11 }}
+                                          >
+                                            {handle_surcharge(carrier, e).name}
+                                          </Text>
+                                          <Text
+                                            type="secondary"
+                                            style={{ fontSize: 11 }}
+                                          >
+                                            ${" "}
+                                            {
+                                              handle_surcharge(carrier, e)
+                                                .amount
+                                            }
+                                          </Text>
+                                        </div>
+                                        <Divider
+                                          style={{
+                                            marginTop: 2,
+                                            marginBottom: 2,
+                                          }}
+                                          dashed
+                                        />
+                                      </Col>
+                                    ))
+                                  : undefined
+                                : undefined}
+                            </Row>
+                          </div>
+                        }
+                        trigger="hover"
+                      >
+                        <FileTextTwoTone
+                          style={{ fontSize: 11, marginLeft: 6 }}
+                        />
+                      </Popover>
+                    )}
                   </span>
                 </span>
               }
@@ -906,15 +1184,136 @@ class Create_order_page extends React.Component {
     return result;
   };
 
-  shouldComponentUpdate(nextProps, nextState) {
-    // console.log('nextprops is ' + nextProps.header_hidden)
-    // console.log('this props is ' + this.props.header_hidden)
-    if (this.props.header_hidden != nextProps.header_hidden) return false;
-    if (this.props.collapsed != nextProps.collapsed) return false;
-    return true;
-  }
+  // shouldComponentUpdate(nextProps, nextState) {
+  //   // console.log('nextprops is ' + nextProps.header_hidden)
+  //   // console.log('this props is ' + this.props.header_hidden)
+  //   if (this.props.header_hidden != nextProps.header_hidden) return false;
+  //   if (this.props.collapsed != nextProps.collapsed) return false;
+  //   return true;
+  // }
 
   componentDidMount() {
+    let repeat_order_content = localStorage.getItem("repeat_order")
+      ? JSON.parse(localStorage.getItem("repeat_order"))
+      : undefined;
+
+    // localStorage.clear();
+    if (repeat_order_content) {
+      let receipant_information = {
+        // _id: selectValue,
+        is_ready: true,
+        nickname: repeat_order_content.data.recipient.nick_name,
+        panel_title: "test",
+        font_type: "strong",
+        receipant_name: repeat_order_content.data.recipient.recipient_name,
+        receipant_phone_number:
+          repeat_order_content.data.recipient.phone_number,
+        receipant_company: repeat_order_content.data.recipient.Company,
+        receipant_add1: repeat_order_content.data.recipient.add1,
+        receipant_add2: repeat_order_content.data.recipient.add2,
+        receipant_zip_code: repeat_order_content.data.recipient.zipcode,
+        receipant_city: repeat_order_content.data.recipient.city,
+        receipant_state: repeat_order_content.data.recipient.state,
+        receipant_is_residential: repeat_order_content.data.recipient.is_res,
+      };
+
+      let sender_information = {
+        // _id: selectValue,
+        is_ready: true,
+        nickname: repeat_order_content.data.sender.nick_name,
+        panel_title: "test",
+        font_type: "strong",
+        is_require_fetch: false,
+        sender_name: repeat_order_content.data.sender.sender_name,
+        sender_phone_number: repeat_order_content.data.sender.phone_number,
+        sender_company: repeat_order_content.data.sender.Company,
+        sender_add1: repeat_order_content.data.sender.add1,
+        sender_add2: repeat_order_content.data.sender.add2,
+        sender_zip_code: repeat_order_content.data.sender.zipcode,
+        sender_city: repeat_order_content.data.sender.city,
+        sender_state: repeat_order_content.data.sender.state,
+      };
+      receipant_information = {
+        ...receipant_information,
+        panel_title: getFullAddressFormR(receipant_information),
+      };
+
+      let parecl_list_raw = repeat_order_content.data.parcel.parcelList;
+
+      let parcel_list = _.groupBy(parecl_list_raw, (item) => [
+        item.weight,
+        item.length,
+        item.height,
+        item.width,
+        item.pack_type,
+        item.reference_1,
+        item.reference_2,
+      ]);
+
+      parcel_list = Object.values(parcel_list).map((e, index) => {
+        // let title =   is_ready_form(this.props.content, this.formRef.current)
+        // ? `重量 ${parseFloat(weight).toFixed(2)} ${
+        //     nextProps.unit_weight
+        //   }，  尺寸 ${length}  x  ${width}  x  ${height} ${
+        //     nextProps.unit_length
+        //   }`
+        // : "编辑中";
+        let result = {
+          font_type: "strong",
+          is_panel_opened: false,
+          key: index == 0 ? "first_pak_0" : uid.randomUUID(6),
+          panel_title: `重量 ${parseFloat(e[0].weight).toFixed(2)} lb , 尺寸 ${
+            e[0].length
+          }  x  ${e[0].width} x ${e[0].height} inch`,
+          pack_info: {
+            same_pack: e.length,
+            ...e[0],
+          },
+        };
+        return result;
+      });
+
+      sender_information = {
+        ...sender_information,
+        panel_title: getFullAddressFormS(sender_information),
+      };
+      let obj = {
+        sender_information,
+        receipant_information,
+        parcel_information: {
+          font_type: "strong",
+          unit_length: "in",
+          unit_weight: "lb",
+          is_ready: true,
+          panel_title: merge_parcel_info(parcel_list).title,
+          parcel_list,
+        },
+        service_information: {
+          is_required_fetch: true,
+          is_select: false,
+          service_name: undefined,
+          panel_title: "请先完成输入信息",
+          font_type: "secondary",
+          service_content: [],
+        },
+
+        setting: {
+          open_panel: [],
+          serviseOpenType: ["UPS", "FEDEX"],
+        },
+      };
+      // this.setState({ current: 0, step_status: "process", is_repeat: true });
+      // this.props.set_form_info(obj);
+      this.props.update_form_info(obj);
+      message.success({
+        content: "加载相同信息",
+        duration: 1,
+      });
+  
+    }
+
+
+
     window.scrollTo(0, 0);
   }
 

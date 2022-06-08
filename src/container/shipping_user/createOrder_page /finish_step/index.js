@@ -27,6 +27,7 @@ import ReactPDF, {
 import LabelGallery from "../../../../components/Labelgallery";
 import OrderDetial from "../../../../components/OrderDetail";
 
+
 const styles = StyleSheet.create({
   page: {
     // clipPath: "inset(10% 0% 0% 0%)",
@@ -199,22 +200,24 @@ class Finish_step extends React.Component {
             >
               新运单
             </Button>
-            <Button
-              style={{
-                borderRadius: "3px",
-                boxShadow: "rgb(204, 204, 204) 0px 0px 10px",
-              }}
-              type="primary"
-              // icon={<RollbackOutlined />}
-              onClick={() => {
-                this.setState({ resetType: "repeat" }, () => {
-                  this.props.resetWithRepeat();
-                });
-              }}
-              key="buy"
-            >
-              相同单
-            </Button>
+  
+              <Button
+                style={{
+                  borderRadius: "3px",
+                  boxShadow: "rgb(204, 204, 204) 0px 0px 10px",
+                }}
+                type="primary"
+                // icon={<RollbackOutlined />}
+                onClick={() => {
+                  this.setState({ resetType: "repeat" }, () => {
+                    this.props.resetWithRepeat();
+                  });
+                }}
+                key="buy"
+              >
+                相同单
+              </Button>
+           
             {/* <Button
               style={{
                 borderRadius: "3px",

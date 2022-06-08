@@ -43,8 +43,6 @@ class order extends Component {
     super(props);
   }
 
-
-
   handle_search(value) {
     this.child.handle_search(value);
   }

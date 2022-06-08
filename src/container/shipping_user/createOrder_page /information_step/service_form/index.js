@@ -195,7 +195,7 @@ const Service_form = Form.create()(
           parcel_list: new_parcel_list,
         },
       };
-      // console.log(update_form_information);
+      console.log(update_form_information);
       // console.log(update_parcel_information)
       let obj = {
         service_information: {},

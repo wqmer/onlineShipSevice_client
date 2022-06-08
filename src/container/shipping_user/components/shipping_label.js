@@ -105,7 +105,7 @@ class Display extends React.Component {
 
     return (
       <Spin size="large" tip="生成PDF中，请稍后" spinning={this.state.loading}>
-        <PDFViewer style={{ width: "100%", height: 1050 }}>
+        <PDFViewer style={{ width: "100vw", height: "100vh" }}>
           <Document
             onRender={() => {
               this.setState({ loading: false });
@@ -113,7 +113,7 @@ class Display extends React.Component {
                 localStorage.removeItem(this.props.batch_id);
               }, 2000);
             }}
-            title="test"
+            title={this.props.batch_id}
             // style={{ padding: 0 }}
           >
             <Page
@@ -125,14 +125,16 @@ class Display extends React.Component {
               // size="B6"
             >
               {urls.map((e) => (
-                <Image
-                  // fixed={true}
-                  style={styles.image}
-                  // debug={true}
-                  key={e}
-                  src={e}
-                  // src="https://ship-service.s3.us-west-2.amazonaws.com/labels/2021-08-21/282825766118.png"
-                />
+                <View key={e} style={styles.view}>
+                  <Image
+                    // fixed={true}
+                    style={styles.image}
+                    // debug={true}
+                    key={e}
+                    src={e}
+                    // src="https://ship-service.s3.us-west-2.amazonaws.com/labels/2021-08-21/282825766118.png"
+                  />
+                </View>
               ))}
             </Page>
           </Document>

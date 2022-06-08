@@ -25,6 +25,9 @@ import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 import _, { times } from "lodash";
 import { get, post } from "../../../../../util/fetch";
+import abbr from "@stdlib/datasets-us-states-abbr";
+
+const STATE_ABBR = abbr();
 
 const nameMapCompoment = (props, state, item) => {
   let value = "";
@@ -47,9 +50,9 @@ const nameMapCompoment = (props, state, item) => {
     case "select":
       form_item_content = (
         <Select placeholder={item.placehold}>
-          <Select.Option value="default_state1">州一</Select.Option>
-          <Select.Option value="default_state2">州二</Select.Option>
-          <Select.Option value="default_state3">州三</Select.Option>
+          {STATE_ABBR.map((e) => (
+            <Select.Option value={e}>{e}</Select.Option>
+          ))}
         </Select>
       );
       break;
@@ -68,7 +71,8 @@ const nameMapCompoment = (props, state, item) => {
       help={item.help}
       rules={item.rule}
       initialValue={selectIV}
-      validateTrigger={item.key == "sender_state" ? undefined : ["onBlur"]}
+      // validateTrigger={item.key == "sender_state" ? undefined : ["onBlur"]}
+      validateTrigger={["onBlur"]}
     >
       {form_item_content}
     </Form.Item>

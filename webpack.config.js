@@ -85,9 +85,9 @@ module.exports = (env) => {
       proxy: {
         "/api": {
           target:
-            "http://smartshipwebapi-env.eba-mevsg3bu.us-west-2.elasticbeanstalk.com/",
-            // 'https://smartship-web-api.herokuapp.com/',
-            // "http://[::1]:8000",
+            // "http://smartshipwebapi-env.eba-mevsg3bu.us-west-2.elasticbeanstalk.com/",
+            //'https://smartship-web-api.herokuapp.com/',
+            "http://localhost:8000",
           pathRewrite: { "^/api": "" },
           changeOrigin: true,
           secure: false,

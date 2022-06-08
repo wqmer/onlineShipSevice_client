@@ -414,6 +414,9 @@ const mapRouterToComponent = (Ref) => [
             dataIndex: ["recipient", "state"],
             align: alignProp,
             key: "recipient_state",
+            render: (text, row) => {
+              return text + " " + row.recipient.zipcode;
+            },
           },
           {
             title: "收货邮编",
@@ -720,7 +723,10 @@ const mapRouterToComponent = (Ref) => [
             dataIndex: ["recipient", "state"],
             align: "left",
             key: "recipient_state",
-            shouldCellUpdate: (record, prevRecord) => false,
+            render: (text, row) => {
+              return text + " " + " " + row.recipient.zipcode;
+            },
+            // shouldCellUpdate: (record, prevRecord) => false,
           },
           // {
           //   title: "收货邮编",
@@ -931,11 +937,14 @@ const mapRouterToComponent = (Ref) => [
             },
           },
           {
-            title: "收货州",
+            title: "收件州",
             width: width_colum.short,
             dataIndex: ["recipient", "state"],
             align: alignProp,
             key: "recipient_state",
+            render: (text, row) => {
+              return text + " " + row.recipient.add2;
+            },
           },
           // {
           //   title: "收货邮编",
